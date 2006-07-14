@@ -59,9 +59,12 @@ function MSBTLoot:SPECIAL_BAGSLOT_UPDATE(bag, slot, itemlink, stack, oldlink, ol
 
     local count = self.loots[itemid]
     if count then
-        local name = GetItemInfo(itemid)
+        local name, _, rarity = GetItemInfo(itemid)
         local message = "[Loot " .. name .. " +" .. count .. "(" .. self.counts[itemid] .. ")]"
-        MikSBT.DisplayMessage(message, MikSBT.DISPLAYTYPE_NOTIFICATION, false, 255, 255, 255)
+        local color = ITEM_QUALITY_COLORS[rarity]
+
+        MikSBT.DisplayMessage(message, MikSBT.DISPLAYTYPE_NOTIFICATION, false, color.r * 255, color.g * 255, color.b * 255)
+
         self.loots[itemid] = nil
     end
 end
