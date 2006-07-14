@@ -10,9 +10,9 @@ local function getitemid(itemlink)
     return itemid
 end
 
-MSBTCounter = {}
+MSBTLoot = {}
 
-function MSBTCounter:ADDON_LOADED(arg1)
+function MSBTLoot:ADDON_LOADED(arg1)
     self.counts = {}
     self.loots = {}
     sebags:RegisterEvent(self, "SPECIAL_BAGSLOT_UPDATE")
@@ -29,7 +29,7 @@ function MSBTCounter:ADDON_LOADED(arg1)
     end
 end
 
-function MSBTCounter:CHAT_MSG_LOOT(arg1)
+function MSBTLoot:CHAT_MSG_LOOT(arg1)
     local _, _, item, count = string.find(arg1, itemidpat .. ".-x(%d+)\.")
     if not item then
         local _, _, item2 = string.find(arg1, itemidpat .. "\.")
@@ -45,7 +45,7 @@ function MSBTCounter:CHAT_MSG_LOOT(arg1)
     end
 end
 
-function MSBTCounter:SPECIAL_BAGSLOT_UPDATE(bag, slot, itemlink, stack, oldlink, oldstack)
+function MSBTLoot:SPECIAL_BAGSLOT_UPDATE(bag, slot, itemlink, stack, oldlink, oldstack)
     local itemid = getitemid(itemlink)
     local oldid = getitemid(oldlink)
 
@@ -67,6 +67,6 @@ function MSBTCounter:SPECIAL_BAGSLOT_UPDATE(bag, slot, itemlink, stack, oldlink,
 end
 
 -- Initialization
-MSBTCounter.frame = CreateFrame("Frame", nil, UIParent)
-MSBTCounter.frame:SetScript("OnEvent", function() MSBTCounter[event](MSBTCounter, arg1) end)
-MSBTCounter.frame:RegisterEvent("ADDON_LOADED")
+MSBTLoot.frame = CreateFrame("Frame", nil, UIParent)
+MSBTLoot.frame:SetScript("OnEvent", function() MSBTLoot[event](MSBTLoot, arg1) end)
+MSBTLoot.frame:RegisterEvent("ADDON_LOADED")

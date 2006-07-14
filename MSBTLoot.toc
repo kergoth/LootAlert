@@ -1,5 +1,5 @@
 ## Interface: 11100
-## Title: MSBTCounter
+## Title: MSBTLoot
 ## Notes: Loot display for Mik's Scrolling Battle Text
 ## Version: 1.0
 ## Author: Kergoth
