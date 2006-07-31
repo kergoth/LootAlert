@@ -1,0 +1,9 @@
+2006-07-30  Chris Larson  <kergoth@crydee>
+
+	* core.lua: Fix bug which resulted in MSBTLoot misreporting the current loot
+	  count.  It was inadvertantly including the loot count of players other than
+	  yourself in addition to your own.  The total count was always correct.
+
+2006-07-14  Chris Larson  <kergoth@crydee>
+
+	* (Many files): Initial creation.

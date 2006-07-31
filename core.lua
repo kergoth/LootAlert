@@ -29,10 +29,11 @@ function MSBTLoot:ADDON_LOADED(arg1)
     end
 end
 
+local lootpatbase = "^You receive loot: .-"..itemidpat
 function MSBTLoot:CHAT_MSG_LOOT(arg1)
-    local _, _, item, count = string.find(arg1, itemidpat .. ".-x(%d+)\.")
+    local _, _, item, count = string.find(arg1, lootpatbase .. ".-x(%d+)\.")
     if not item then
-        local _, _, item2 = string.find(arg1, itemidpat .. "\.")
+        local _, _, item2 = string.find(arg1, lootpatbase .. "\.")
         item = item2
         count = 1
     end
