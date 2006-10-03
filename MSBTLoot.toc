@@ -4,6 +4,7 @@
 ## Version: 1.0
 ## Author: Kergoth
 ## LoadWith: MikScrollingBattleText
+## OptionalDeps: MikScrollingBattleText
 ## DefaultState: Enabled
 ## LoadOnDemand: 1
 ## X-Category: Interface

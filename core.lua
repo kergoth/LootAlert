@@ -13,17 +13,19 @@ end
 MSBTLoot = {}
 
 function MSBTLoot:ADDON_LOADED(arg1)
-    self.counts = {}
-    self.loots = {}
-    sebags:RegisterEvent(self, "SPECIAL_BAGSLOT_UPDATE")
-    this:RegisterEvent("CHAT_MSG_LOOT")
-    for bag = 0, NUM_BAG_FRAMES do
-        for slot = 1, sebags:GetNumSlots(bag) do
-            local item = GetContainerItemLink(bag, slot)
-            if item then
-                local _, count = GetContainerItemInfo(bag, slot)
-                item = getitemid(item)
-                self.counts[item] = (self.counts[item] or 0) + count
+    if arg1 == "MSBTLoot" then
+        self.counts = {}
+        self.loots = {}
+        sebags:RegisterEvent(self, "SPECIAL_BAGSLOT_UPDATE")
+        this:RegisterEvent("CHAT_MSG_LOOT")
+        for bag = 0, NUM_BAG_FRAMES do
+            for slot = 1, sebags:GetNumSlots(bag) do
+                local item = GetContainerItemLink(bag, slot)
+                if item then
+                    local _, count = GetContainerItemInfo(bag, slot)
+                    item = getitemid(item)
+                    self.counts[item] = (self.counts[item] or 0) + count
+                end
             end
         end
     end
