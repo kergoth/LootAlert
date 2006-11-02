@@ -2,13 +2,15 @@
 -- Scrolling Battle Text.  It keeps total counts of all the items in your
 -- inventory so as to show that as well as the amount just looted.
 
-local sebags = SpecialEventsEmbed:GetInstance("Bags 1")
-
 local itemidpat = "(%d+):%d+:%d+:%d+"
+local linkpat = '|c........|Hitem:'..itemidpat..'.*|r'
 local function getitemid(itemlink)
     local _, _, itemid = string.find(itemlink or "", itemidpat)
     return itemid
 end
+
+
+local sebags = SpecialEventsEmbed:GetInstance("Bags 1")
 
 MSBTLoot = {}
 
@@ -31,12 +33,15 @@ function MSBTLoot:ADDON_LOADED(arg1)
     end
 end
 
-local lootpatbase = "^You receive loot: .-"..itemidpat
-function MSBTLoot:CHAT_MSG_LOOT(arg1)
-    local _, _, item, count = string.find(arg1, lootpatbase .. ".-x(%d+)\.")
+local escaped = string.gsub(linkpat, '%%', '%%%%')
+local single = string.gsub(LOOT_ITEM_SELF, '%%s', escaped)
+local multiple = string.gsub(string.gsub(LOOT_ITEM_SELF_MULTIPLE, '%%d', '(%%d+)'),
+                             '%%s', escaped)
+
+function MSBTLoot:CHAT_MSG_LOOT(msg)
+    local _, _, item, count = string.find(msg, multiple)
     if not item then
-        local _, _, item2 = string.find(arg1, lootpatbase .. "\.")
-        item = item2
+        _, _, item = string.find(msg, single)
         count = 1
     end
 
