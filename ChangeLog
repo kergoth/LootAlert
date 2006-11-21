@@ -1,3 +1,9 @@
+2006-11-20  Chris Larson  <kergoth@crydee>
+
+	* Many files: Add support for fct, sct, and rename the addon
+	  appropriately from MSBTLoot to LootAlert.
+
+
 2006-11-01  Chris Larson  <kergoth@crydee>
 
 	* core.lua: Switch from using a local pattern for loot to modifying the

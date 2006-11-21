@@ -12,10 +12,10 @@ end
 
 local sebags = SpecialEventsEmbed:GetInstance("Bags 1")
 
-MSBTLoot = {}
+LootAlert = {}
 
-function MSBTLoot:ADDON_LOADED(arg1)
-    if arg1 == "MSBTLoot" then
+function LootAlert:ADDON_LOADED(arg1)
+    if arg1 == "LootAlert" and (MikSBT or SCT_Display or SCT) then
         self.counts = {}
         self.loots = {}
         sebags:RegisterEvent(self, "SPECIAL_BAGSLOT_UPDATE")
@@ -38,7 +38,7 @@ local single = string.gsub(LOOT_ITEM_SELF, '%%s', escaped)
 local multiple = string.gsub(string.gsub(LOOT_ITEM_SELF_MULTIPLE, '%%d', '(%%d+)'),
                              '%%s', escaped)
 
-function MSBTLoot:CHAT_MSG_LOOT(msg)
+function LootAlert:CHAT_MSG_LOOT(msg)
     local _, _, item, count = string.find(msg, multiple)
     if not item then
         _, _, item = string.find(msg, single)
@@ -53,7 +53,7 @@ function MSBTLoot:CHAT_MSG_LOOT(msg)
     end
 end
 
-function MSBTLoot:SPECIAL_BAGSLOT_UPDATE(bag, slot, itemlink, stack, oldlink, oldstack)
+function LootAlert:SPECIAL_BAGSLOT_UPDATE(bag, slot, itemlink, stack, oldlink, oldstack)
     local itemid = getitemid(itemlink)
     local oldid = getitemid(oldlink)
 
@@ -71,13 +71,23 @@ function MSBTLoot:SPECIAL_BAGSLOT_UPDATE(bag, slot, itemlink, stack, oldlink, ol
         local message = "[Loot " .. name .. " +" .. count .. "(" .. self.counts[itemid] .. ")]"
         local color = ITEM_QUALITY_COLORS[rarity]
 
-        MikSBT.DisplayMessage(message, MikSBT.DISPLAYTYPE_NOTIFICATION, false, color.r * 255, color.g * 255, color.b * 255)
+        if MikSBT then
+            MikSBT.DisplayMessage(message, MikSBT.DISPLAYTYPE_NOTIFICATION, false, color.r * 255, color.g * 255, color.b * 255)
+        elseif SCT_Display or (SCT and SCT.DisplayText) then
+            if SCT_Display then
+                SCT_Display_Message(message, color)
+            else
+                SCT:DisplayMessage(message, color)
+            end
+        elseif CombatText_AddMessage then
+            CombatText_AddMessage(message, COMBAT_TEXT_SCROLL_FUNCTION, color.r, color.g, color.b, "sticky", nil)
+        end
 
         self.loots[itemid] = nil
     end
 end
 
 -- Initialization
-MSBTLoot.frame = CreateFrame("Frame", nil, UIParent)
-MSBTLoot.frame:SetScript("OnEvent", function() MSBTLoot[event](MSBTLoot, arg1) end)
-MSBTLoot.frame:RegisterEvent("ADDON_LOADED")
+LootAlert.frame = CreateFrame("Frame", nil, UIParent)
+LootAlert.frame:SetScript("OnEvent", function() LootAlert[event](LootAlert, arg1) end)
+LootAlert.frame:RegisterEvent("ADDON_LOADED")
