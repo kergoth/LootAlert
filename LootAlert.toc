@@ -1,4 +1,4 @@
-## Interface: 20000
+## Interface: 20003
 ## Title: Loot Alert
 ## Notes: Loot display in scrolling combat text addons (sct, fct, msbt).
 ## Version: 1.0

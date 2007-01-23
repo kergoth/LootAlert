@@ -1,3 +1,9 @@
+2007-01-22  Chris Larson  <kergoth@crydee>
+
+	* core.lua: Make the decision about which combat text to notify to at
+	  addon load time rather than each time we loot, by generating a self.msg
+	  closure.
+
 2006-12-05  Chris Larson  <kergoth@crydee>
 
 	* core.lua: Switch from monitoring bag contents with sebags to using
