@@ -1,3 +1,7 @@
+2007-02-02  Chris Larson  <kergoth@crydee>
+
+	* core.lua: Add display of looted gold.
+
 2007-01-22  Chris Larson  <kergoth@crydee>
 
 	* core.lua: Make the decision about which combat text to notify to at

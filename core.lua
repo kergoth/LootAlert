@@ -20,6 +20,7 @@ function LootAlert:ADDON_LOADED(name)
 
         if self.msg then
             this:RegisterEvent('CHAT_MSG_LOOT')
+            this:RegisterEvent('CHAT_MSG_MONEY')
             this:UnregisterEvent('ADDON_LOADED')
         end
     elseif name == 'Blizzard_CombatText' then
@@ -31,14 +32,30 @@ function LootAlert:ADDON_LOADED(name)
         end
 
         this:RegisterEvent('CHAT_MSG_LOOT')
+        this:RegisterEvent('CHAT_MSG_MONEY')
         this:UnregisterEvent('ADDON_LOADED')
     end
 end
 
-local linkpat = '|c........|Hitem:(%%d+):.*|r'
+local function moneymsg(gold, silver, copper)
+    return ('%s%s%s'):format(gold and ('%sg'):format(gold) or '',
+                             silver and ('%ss'):format(silver) or '',
+                             copper and ('%sc'):format(copper) or '')
+end
+local solo = YOU_LOOT_MONEY:gsub('%%s', '(.*)')
+local grouped = LOOT_MONEY_SPLIT:gsub('%%s', '(.*)')
+local white = {r = 1, g = 1, b = 1}
+function LootALert:CHAT_MSG_MONEY(msg)
+    local moneys = msg:match(solo) or msg:match(grouped)
+    local gold   = moneys:match(('.- %s'):format(GOLD))
+    local silver = moneys:match(('.- %s'):format(SILVER))
+    local copper = moneys:match(('.- %s'):format(COPPER))
+    self.msg(('[Loot +%s]'):format(moneymsg(gold, silver, copper)), white)
+end
+
+local linkpat = '|c........|Hitem:(%%d+):.-|r'
 local single = LOOT_ITEM_SELF:gsub('%%s', linkpat)
 local multiple = LOOT_ITEM_SELF_MULTIPLE:gsub('%%d', '(%%d+)'):gsub('%%s', linkpat)
-
 function LootAlert:CHAT_MSG_LOOT(msg)
     local item, count = msg:match(multiple)
     if not item then
