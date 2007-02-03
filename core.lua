@@ -45,15 +45,15 @@ end
 local solo = YOU_LOOT_MONEY:gsub('%%s', '(.*)')
 local grouped = LOOT_MONEY_SPLIT:gsub('%%s', '(.*)')
 local white = {r = 1, g = 1, b = 1}
-function LootALert:CHAT_MSG_MONEY(msg)
+function LootAlert:CHAT_MSG_MONEY(msg)
     local moneys = msg:match(solo) or msg:match(grouped)
     if not moneys then
         return
     end
 
-    local gold   = moneys:match(('.- %s'):format(GOLD))
-    local silver = moneys:match(('.- %s'):format(SILVER))
-    local copper = moneys:match(('.- %s'):format(COPPER))
+    local gold   = moneys:match(('(%%d+) %s'):format(GOLD))
+    local silver = moneys:match(('(%%d+) %s'):format(SILVER))
+    local copper = moneys:match(('(%%d+) %s'):format(COPPER))
     self.msg(('[Loot +%s]'):format(moneymsg(gold, silver, copper)), white)
 end
 
