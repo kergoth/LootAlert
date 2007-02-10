@@ -3,7 +3,7 @@ local lootmessage = '[Loot %s +%d(%d)]'
 local moneymessage = '[Loot +%s]'
 
 -- Change this if you don't like the compact money format
-local moneyformat = function(g, s, c)
+local moneyformat = function(gold, silver, copper)
     return ('%s%s%s'):format(gold and ('%sg'):format(gold) or '',
                              silver and ('%ss'):format(silver) or '',
                              copper and ('%sc'):format(copper) or '')
