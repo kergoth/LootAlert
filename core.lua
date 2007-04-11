@@ -2,6 +2,11 @@
 local lootmessage = '[Loot %s +%d(%d)]'
 local moneymessage = '[Loot +%s]'
 
+if GetLocale() == 'zhTW' then
+    lootmessage = '[拾取 %s +%d(%d)]'
+    moneymessage = '[拾取 +%s]'
+end
+
 -- Change this if you don't like the compact money format
 local moneyformat = function(gold, silver, copper)
     return ('%s%s%s'):format(gold and ('%sg'):format(gold) or '',
