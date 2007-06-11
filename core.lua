@@ -1,13 +1,4 @@
--- Translate these at some point
-local lootmessage = '[Loot %s +%d(%d)]'
-local moneymessage = '[Loot +%s]'
-
--- Change this if you don't like the compact money format
-local moneyformat = function(gold, silver, copper)
-    return ('%s%s%s'):format(gold and ('%sg'):format(gold) or '',
-                             silver and ('%ss'):format(silver) or '',
-                             copper and ('%sc'):format(copper) or '')
-end
+local lootmessage, moneymessage, moneyformat
 
 if GetLocale() == 'zhTW' then
     lootmessage = '[拾取 %s +%d(%d)]'
@@ -17,6 +8,14 @@ if GetLocale() == 'zhTW' then
         return ('%s%s%s'):format(gold and ('%s金'):format(gold) or '',
                              silver and ('%s銀'):format(silver) or '',
                              copper and ('%s銅'):format(copper) or '')
+    end
+else
+    lootmessage = '[Loot %s +%d(%d)]'
+    moneymessage = '[Loot +%s]'
+    moneyformat = function(gold, silver, copper)
+        return ('%s%s%s'):format(gold and ('%sg'):format(gold) or '',
+                                 silver and ('%ss'):format(silver) or '',
+                                 copper and ('%sc'):format(copper) or '')
     end
 end
 
@@ -46,6 +45,10 @@ function LootAlert:ADDON_LOADED(name)
     if name == 'Blizzard_CombatText' or CombatText_AddMessage then
         msg = function(message, color)
             CombatText_AddMessage(message, COMBAT_TEXT_SCROLL_FUNCTION, color.r, color.g, color.b, 'sticky', nil)
+        end
+    else
+        msg = function(message, color)
+            UIErrorsFrame:AddMessage(message, color.r, color.g, color.b)
         end
     end
 
