@@ -19,7 +19,9 @@ else
     end
 end
 
-local msg
+local msg = function(message, color)
+                UIErrorsFrame:AddMessage(message, color.r, color.g, color.b)
+            end
 
 local LootAlert = CreateFrame('Frame', nil, UIParent)
 LootAlert:SetScript('OnEvent', function(self, event, ...)
@@ -29,6 +31,7 @@ LootAlert:RegisterEvent('ADDON_LOADED')
 
 function LootAlert:ADDON_LOADED(name)
     if name == 'LootAlert' then
+        ChatFrame1:AddMessage("lootalert loaded")
         if MikSBT then
             msg = function(message, color)
                 MikSBT.DisplayMessage(message, MikSBT.DISPLAYTYPE_NOTIFICATION, false, color.r * 255, color.g * 255, color.b * 255)
@@ -40,15 +43,10 @@ function LootAlert:ADDON_LOADED(name)
                 SCT:DisplayMessage(message, color)
             end
         end
-    end
-
-    if name == 'Blizzard_CombatText' or CombatText_AddMessage then
+        ChatFrame1:AddMessage("msg is "..tostring(msg))
+    elseif name == 'Blizzard_CombatText' or CombatText_AddMessage then
         msg = function(message, color)
             CombatText_AddMessage(message, COMBAT_TEXT_SCROLL_FUNCTION, color.r, color.g, color.b, 'sticky', nil)
-        end
-    else
-        msg = function(message, color)
-            UIErrorsFrame:AddMessage(message, color.r, color.g, color.b)
         end
     end
 
