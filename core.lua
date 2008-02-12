@@ -2,11 +2,11 @@ local strmatch, strformat = string.match, string.format
 local lootmessage, moneymessage, moneyformat
 
 if GetLocale() == 'zhTW' then
-    lootmessage = '[拾取 %s%s +%d(%d)]'
-    moneymessage = '[拾取 +%s]'
+    lootmessage = '拾取: %s%s|r%s'
+    moneymessage = '拾取: +%s%s%s'
 else
-    lootmessage = '[Loot %s%s|r +%d(%d)]'
-    moneymessage = '[Loot +%s]'
+    lootmessage = 'Loot: %s%s|r%s'
+    moneymessage = 'Loot: +%s%s%s'
 end
 
 local LootAlert = CreateFrame('Frame', nil, UIParent)
@@ -18,8 +18,8 @@ LootAlert:RegisterEvent('PLAYER_LOGIN')
 local function msg(message)
     UIErrorsFrame:AddMessage(message)
 end
-local color = {r = 1, g = 1, b = 1}
 local ITEM_QUALITY_COLORPATS = {}
+local color = {r=1, g=1, b=1}
 function LootAlert:PLAYER_LOGIN()
     if MikSBT then
         msg = function(message)
@@ -33,7 +33,7 @@ function LootAlert:PLAYER_LOGIN()
         end
     elseif CombatText_AddMessage then
         msg = function(message)
-            CombatText_AddMessage(message, COMBAT_TEXT_SCROLL_FUNCTION, color.r, color.g, color.b, 'sticky', nil)
+            CombatText_AddMessage(message, COMBAT_TEXT_SCROLL_FUNCTION, color.r, color.g, color.b, "sticky")
         end
     end
 
@@ -56,11 +56,9 @@ function LootAlert:CHAT_MSG_MONEY(chatmsg)
     local gold = strmatch(moneys, strformat('(%%d+) %s', GOLD))
     local silver = strmatch(moneys, strformat('(%%d+) %s', SILVER))
     local copper = strmatch(moneys, strformat('(%%d+) %s', COPPER))
-    local out = strformat(moneymessage,
-                          strformat('%s%s%s',
-                                    gold and strformat('|cffffd700%sg', gold) or '',
-                                    silver and strformat('|cffc7c7cf%ss', silver) or '',
-                                    copper and strformat('|cffeda55f%sc', copper) or ''))
+    local out = strformat(moneymessage, gold and strformat('|cffffd700%sg', gold) or '',
+                                        silver and strformat('|cffc7c7cf%ss', silver) or '',
+                                        copper and strformat('|cffeda55f%sc', copper) or '')
 
     msg(out)
 end
@@ -79,8 +77,15 @@ function LootAlert:CHAT_MSG_LOOT(chatmsg)
         local oldtotal = GetItemCount(item)
         local name, _, rarity = GetItemInfo(item)
         local color = ITEM_QUALITY_COLORPATS[rarity]
-        local out = strformat(lootmessage, color, name, count, oldtotal + count)
 
+        local rest = ""
+        if oldtotal > 0 then
+            rest = strformat(" +%d(%d)", count, oldtotal + count)
+        elseif count > 1 then
+            rest = strformat(" +%d", count)
+        end
+
+        local out = strformat(lootmessage, color, name, rest)
         msg(out)
     end
 end
