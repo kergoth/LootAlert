@@ -22,17 +22,24 @@ local ITEM_QUALITY_COLORPATS = {}
 local color = {r=1, g=1, b=1}
 function LootAlert:PLAYER_LOGIN()
     if MikSBT then
-        msg = function(message)
-            MikSBT.DisplayMessage(message, MikSBT.DISPLAYTYPE_STATIC, false, color.r * 255, color.g * 255, color.b * 255)
+		local msbteventsettings = {
+			colorR = color.r,
+			colorG = color.g,
+			colorB = color.b,
+			scrollArea = MikSBT.DISPLAYTYPE_STATIC,
+		}
+		local DisplayEvent = MikSBT.Animations.DisplayEvent
+        msg = function(message, tex)
+            DisplayEvent(msbteventsettings, message, tex)
+        end
+    elseif SCT and SCT.DisplayText then
+        msg = function(message, tex)
+			SCT:DisplayText(message, color, true, "event", 1, nil, nil, tex)
         end
     elseif SCT_Display then
         msg = SCT_Display_Message
-    elseif SCT and SCT.DisplayText then
-        msg = function(message)
-            SCT:DisplayMessage(message, color)
-        end
     elseif CombatText_AddMessage then
-        msg = function(message)
+        msg = function(message, tex)
             CombatText_AddMessage(message, COMBAT_TEXT_SCROLL_FUNCTION, color.r, color.g, color.b, "sticky")
         end
     end
@@ -56,11 +63,11 @@ function LootAlert:CHAT_MSG_MONEY(chatmsg)
     local gold = strmatch(moneys, strformat('(%%d+) %s', GOLD))
     local silver = strmatch(moneys, strformat('(%%d+) %s', SILVER))
     local copper = strmatch(moneys, strformat('(%%d+) %s', COPPER))
-    local out = strformat(moneymessage, gold and strformat('|cffffd700%sg', gold) or '',
-                                        silver and strformat('|cffc7c7cf%ss', silver) or '',
+    local out = strformat(moneymessage, gold and strformat('|cffffd700%sg ', gold) or '',
+                                        silver and strformat('|cffc7c7cf%ss ', silver) or '',
                                         copper and strformat('|cffeda55f%sc', copper) or '')
 
-    msg(out)
+    msg(out, "Interface\\Icons\\INV_Ore_Gold_01")
 end
 
 local linkpat = '|c........|Hitem:(%%d+):.-|r'
@@ -77,7 +84,7 @@ function LootAlert:CHAT_MSG_LOOT(chatmsg)
 
     if item then
         local oldtotal = GetItemCount(item)
-        local name, _, rarity = GetItemInfo(item)
+        local name, _, rarity, _, _, _, _, _, _, tex = GetItemInfo(item)
         local color = ITEM_QUALITY_COLORPATS[rarity]
 
         local rest = " "
@@ -89,6 +96,6 @@ function LootAlert:CHAT_MSG_LOOT(chatmsg)
         end
 
         local out = strformat(lootmessage, color, name, rest)
-        msg(out)
+        msg(out, tex)
     end
 end
