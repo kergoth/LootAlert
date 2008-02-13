@@ -41,7 +41,7 @@ function LootAlert:PLAYER_LOGIN()
     self:RegisterEvent('CHAT_MSG_MONEY')
 
     for k, v in pairs(ITEM_QUALITY_COLORS) do
-        ITEM_QUALITY_COLORPATS[k] = strformat("|cff%x%x%x", 255 * v.r, 255 * v.g, 255 * v.b)
+        ITEM_QUALITY_COLORPATS[k] = strformat("|cff%02x%02x%02x", 255 * v.r, 255 * v.g, 255 * v.b)
     end
 end
 
@@ -71,6 +71,8 @@ function LootAlert:CHAT_MSG_LOOT(chatmsg)
     if not item then
         item = strmatch(chatmsg, single)
         count = 1
+    else
+        count = tonumber(count)
     end
 
     if item then
@@ -78,11 +80,12 @@ function LootAlert:CHAT_MSG_LOOT(chatmsg)
         local name, _, rarity = GetItemInfo(item)
         local color = ITEM_QUALITY_COLORPATS[rarity]
 
-        local rest = ""
+        local rest = " "
+        if count > 1 then
+            rest = " +"..count
+        end
         if oldtotal > 0 then
-            rest = strformat(" +%d(%d)", count, oldtotal + count)
-        elseif count > 1 then
-            rest = strformat(" +%d", count)
+            rest = rest .. "("..oldtotal+count..")"
         end
 
         local out = strformat(lootmessage, color, name, rest)
