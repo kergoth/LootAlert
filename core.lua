@@ -1,3 +1,34 @@
+local moneyicon = "Interface\\Icons\\INV_Ore_Gold_01"
+local white = {r=1, g=1, b=1}
+local config = {
+    itemraritycolor = true,
+    moneycolor = true,
+
+    msbt = {
+        scrollarea = "Static",
+        sticky = false,
+        color = white,
+        icon = true,
+    },
+    sct = {
+        scrollarea = 1,
+        sticky = true,
+        color = white,
+        icon = true,
+    },
+    fct = {
+        sticky = true,
+        color = white,
+    },
+    uierrorsframe = {
+        color = white,
+    },
+}
+local cfg = config.uierrorsframe
+local function msg(message)
+    UIErrorsFrame:AddMessage(message, cfg.color.r, cfg.color.g, cfg.color.b)
+end
+
 local strmatch, strformat = string.match, string.format
 local lootmessage, moneymessage, moneyformat
 
@@ -15,32 +46,30 @@ LootAlert:SetScript('OnEvent', function(self, event, ...)
 end)
 LootAlert:RegisterEvent('PLAYER_LOGIN')
 
-local function msg(message)
-    UIErrorsFrame:AddMessage(message)
-end
 local ITEM_QUALITY_COLORPATS = {}
-local color = {r=1, g=1, b=1}
 function LootAlert:PLAYER_LOGIN()
     if MikSBT then
-		local msbteventsettings = {
-			colorR = color.r,
-			colorG = color.g,
-			colorB = color.b,
-			scrollArea = MikSBT.DISPLAYTYPE_STATIC,
-		}
-		local DisplayEvent = MikSBT.Animations.DisplayEvent
+        cfg = config.msbt
+        local msbteventsettings = {
+            colorR = cfg.color.r,
+            colorG = cfg.color.g,
+            colorB = cfg.color.b,
+            scrollArea = cfg.scrollarea,
+            isCrit = cfg.sticky,
+        }
+        local DisplayEvent = MikSBT.Animations.DisplayEvent
         msg = function(message, tex)
-            DisplayEvent(msbteventsettings, message, tex)
+            DisplayEvent(msbteventsettings, message, cfg.icon and tex)
         end
     elseif SCT and SCT.DisplayText then
+        cfg = config.sct
         msg = function(message, tex)
-			SCT:DisplayText(message, color, true, "event", 1, nil, nil, tex)
+            SCT:DisplayText(message, cfg.color, cfg.sticky, "event", cfg.scrollarea, nil, nil, cfg.icon and tex)
         end
-    elseif SCT_Display then
-        msg = SCT_Display_Message
     elseif CombatText_AddMessage then
+        cfg = config.fct
         msg = function(message, tex)
-            CombatText_AddMessage(message, COMBAT_TEXT_SCROLL_FUNCTION, color.r, color.g, color.b, "sticky")
+            CombatText_AddMessage(message, COMBAT_TEXT_SCROLL_FUNCTION, cfg.color.r, cfg.color.g, cfg.color.b, cfg.sticky and "crit")
         end
     end
 
@@ -54,20 +83,26 @@ end
 
 local solo = YOU_LOOT_MONEY:gsub('%%s', '(.*)')
 local grouped = LOOT_MONEY_SPLIT:gsub('%%s', '(.*)')
+local goldmatch = strformat('(%%d+) %s', GOLD)
+local silvermatch = strformat('(%%d+) %s', SILVER)
+local coppermatch = strformat('(%%d+) %s', COPPER)
+local goldpat = config.moneycolor and '|cffffd700%sg ' or '%sg '
+local silverpat = config.moneycolor and '|cfffc7c7cf%ss ' or '%ss '
+local copperpat = config.moneycolor and '|cffeda55f%sc' or '%sc'
 function LootAlert:CHAT_MSG_MONEY(chatmsg)
     local moneys = strmatch(chatmsg, solo) or strmatch(chatmsg, grouped)
     if not moneys then
         return
     end
 
-    local gold = strmatch(moneys, strformat('(%%d+) %s', GOLD))
-    local silver = strmatch(moneys, strformat('(%%d+) %s', SILVER))
-    local copper = strmatch(moneys, strformat('(%%d+) %s', COPPER))
-    local out = strformat(moneymessage, gold and strformat('|cffffd700%sg ', gold) or '',
-                                        silver and strformat('|cffc7c7cf%ss ', silver) or '',
-                                        copper and strformat('|cffeda55f%sc', copper) or '')
+    local gold = strmatch(moneys, goldmatch)
+    local silver = strmatch(moneys, silvermatch)
+    local copper = strmatch(moneys, coppermatch)
+    local out = strformat(moneymessage, gold and strformat(goldpat, gold) or '',
+                                        silver and strformat(silverpat, silver) or '',
+                                        copper and strformat(copperpat, copper) or '')
 
-    msg(out, "Interface\\Icons\\INV_Ore_Gold_01")
+    msg(out, moneyicon)
 end
 
 local linkpat = '|c........|Hitem:(%%d+):.-|r'
@@ -85,7 +120,7 @@ function LootAlert:CHAT_MSG_LOOT(chatmsg)
     if item then
         local oldtotal = GetItemCount(item)
         local name, _, rarity, _, _, _, _, _, _, tex = GetItemInfo(item)
-        local color = ITEM_QUALITY_COLORPATS[rarity]
+        local color = config.itemraritycolor and ITEM_QUALITY_COLORPATS[rarity] or ""
 
         local rest = " "
         if count > 1 then
