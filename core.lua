@@ -1,3 +1,10 @@
+-- LootAlert is a simple addon that displays what items you've looted, how
+-- many, and what the total number of that item is in your inventory. It
+-- colors the item name in the message by item rarity, and displays looted
+-- gold (colored by gold/silver/copper). It supports showing an icon for sct &
+-- msbt. It can output to sct, msbt, blizzard fct, or the UIErrorsFrame.
+
+-- Configuration {{{1
 local moneyicon = "Interface\\Icons\\INV_Ore_Gold_01"
 local white = {r=1, g=1, b=1}
 local config = {
@@ -28,10 +35,14 @@ local cfg = config.uierrorsframe
 local function msg(message)
     UIErrorsFrame:AddMessage(message, cfg.color.r, cfg.color.g, cfg.color.b)
 end
+-- }}}1
 
+-- Localized Globals {{{1
 local strmatch, strformat = string.match, string.format
 local lootmessage, moneymessage, moneyformat
+-- }}}1
 
+-- Localization {{{1
 if GetLocale() == 'zhTW' then
     lootmessage = '拾取: %s%s|r%s'
     moneymessage = '拾取: +%s%s%s'
@@ -39,7 +50,9 @@ else
     lootmessage = 'Loot: %s%s|r%s'
     moneymessage = 'Loot: +%s%s%s'
 end
+-- }}}1
 
+-- Initialization {{{1
 local LootAlert = CreateFrame('Frame', nil, UIParent)
 LootAlert:SetScript('OnEvent', function(self, event, ...)
     self[event](self, ...)
@@ -80,7 +93,9 @@ function LootAlert:PLAYER_LOGIN()
         ITEM_QUALITY_COLORPATS[k] = strformat("|cff%02x%02x%02x", 255 * v.r, 255 * v.g, 255 * v.b)
     end
 end
+-- }}}1
 
+-- Loot Event Handling {{{1 {{{1
 local solo = YOU_LOOT_MONEY:gsub('%%s', '(.*)')
 local grouped = LOOT_MONEY_SPLIT:gsub('%%s', '(.*)')
 local goldmatch = strformat('(%%d+) %s', GOLD)
@@ -111,8 +126,7 @@ local multiple = LOOT_ITEM_SELF_MULTIPLE:gsub('%%d', '(%%d+)'):gsub('%%s', linkp
 function LootAlert:CHAT_MSG_LOOT(chatmsg)
     local item, count = strmatch(chatmsg, multiple)
     if not item then
-        item = strmatch(chatmsg, single)
-        count = 1
+        item = strmatch(chatmsg, single) count = 1
     else
         count = tonumber(count)
     end
@@ -134,3 +148,6 @@ function LootAlert:CHAT_MSG_LOOT(chatmsg)
         msg(out, tex)
     end
 end
+-- }}}1
+
+--  vim: set fenc=utf-8 sts=4 sw=4 et fdm=marker:

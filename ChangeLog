@@ -3,6 +3,7 @@
 	* core.lua: Make a few things configurable and move all configuration
 	  into a single config table, to prepare for adding in game
 	  configuration.
+	* LootAlert.toc: Update version & Interface #.
 
 2008-02-13  Chris Larson  <clarson AT kergoth DOT com>
 
