@@ -1,12 +1,11 @@
-## Interface: 20100
+## Interface: 20300
 ## Title: Loot Alert
 ## Notes: Loot display in scrolling combat text addons (sct, fct, msbt).
-## Version: 1.0
+## Version: 3
 ## Author: Kergoth
 ## DefaultState: Enabled
 ## LoadOnDemand: 0
-## OptionalDeps: MikScrollingBattleText, sct
 ## X-Category: Interface
-## X-eMail: clarson@kergoth.com
+## X-eMail: clarson at kergoth dot com
 
 core.lua
