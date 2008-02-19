@@ -101,9 +101,9 @@ local grouped = LOOT_MONEY_SPLIT:gsub('%%s', '(.*)')
 local goldmatch = strformat('(%%d+) %s', GOLD)
 local silvermatch = strformat('(%%d+) %s', SILVER)
 local coppermatch = strformat('(%%d+) %s', COPPER)
-local goldpat = config.moneycolor and '|cffffd700%sg ' or '%sg '
-local silverpat = config.moneycolor and '|cfffc7c7cf%ss ' or '%ss '
-local copperpat = config.moneycolor and '|cffeda55f%sc' or '%sc'
+local goldpat = config.moneycolor and '|cffffd700%sg|r ' or '%sg '
+local silverpat = config.moneycolor and '|cffc7c7cf%ss|r ' or '%ss '
+local copperpat = config.moneycolor and '|cffeda55f%sc|r' or '%sc'
 function LootAlert:CHAT_MSG_MONEY(chatmsg)
     local moneys = strmatch(chatmsg, solo) or strmatch(chatmsg, grouped)
     if not moneys then
