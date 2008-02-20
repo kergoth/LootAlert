@@ -7,5 +7,6 @@
 ## LoadOnDemand: 0
 ## X-Category: Interface
 ## X-eMail: clarson at kergoth dot com
+## SavedVariablesPerCharacter: LootAlertConfig
 
 core.lua

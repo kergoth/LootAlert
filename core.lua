@@ -7,44 +7,7 @@
 -- Configuration {{{1
 local moneyicon = "Interface\\Icons\\INV_Ore_Gold_01"
 local white = {r=1, g=1, b=1}
-local config = {
-    itemraritycolor = true,
-    moneycolor = true,
-    chatoutput = true,
-    chatsettings = {
---         [1] = true,
-        LOOTALERT_ITEM = {
-            r = 0,
-            g = 2/3,
-            b = 0,
-        },
-        LOOTALERT_MONEY = {
-            r = 1,
-            g = 1,
-            b = 0,
-        },
-    },
-
-    msbt = {
-        scrollarea = "Static",
-        sticky = false,
-        color = white,
-        icon = true,
-    },
-    sct = {
-        scrollarea = 1,
-        sticky = true,
-        color = white,
-        icon = true,
-    },
-    fct = {
-        sticky = true,
-        color = white,
-    },
-    uierrorsframe = {
-        color = white,
-    },
-}
+local config
 local cfg = config.uierrorsframe
 local function msg(message)
     UIErrorsFrame:AddMessage(message, cfg.color.r, cfg.color.g, cfg.color.b)
@@ -149,6 +112,48 @@ LootAlert:RegisterEvent('PLAYER_LOGIN')
 
 local ITEM_QUALITY_COLORPATS = {}
 function LootAlert:PLAYER_LOGIN()
+    if not LootAlertConfig then
+        LootAlertConfig = {
+            itemraritycolor = true,
+            moneycolor = true,
+            chatoutput = true,
+            chatsettings = {
+--                 [1] = true,
+                LOOTALERT_ITEM = {
+                    r = 0,
+                    g = 2/3,
+                    b = 0,
+                },
+                LOOTALERT_MONEY = {
+                    r = 1,
+                    g = 1,
+                    b = 0,
+                },
+            },
+
+            msbt = {
+                scrollarea = "Static",
+                sticky = false,
+                color = white,
+                icon = true,
+            },
+            sct = {
+                scrollarea = 1,
+                sticky = true,
+                color = white,
+                icon = true,
+            },
+            fct = {
+                sticky = true,
+                color = white,
+            },
+            uierrorsframe = {
+                color = white,
+            },
+        }
+    end
+    config = LootAlertConfig
+
     if MikSBT then
         cfg = config.msbt
         local msbteventsettings = {
