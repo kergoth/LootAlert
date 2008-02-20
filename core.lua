@@ -4,19 +4,32 @@
 -- gold (colored by gold/silver/copper). It supports showing an icon for sct &
 -- msbt. It can output to sct, msbt, blizzard fct, or the UIErrorsFrame.
 
--- Configuration {{{1
+-- Locals {{{1
 local moneyicon = "Interface\\Icons\\INV_Ore_Gold_01"
 local white = {r=1, g=1, b=1}
-local config
-local cfg = config.uierrorsframe
-local function msg(message)
-    UIErrorsFrame:AddMessage(message, cfg.color.r, cfg.color.g, cfg.color.b)
-end
--- }}}1
-
--- Localized Globals {{{1
-local strmatch, strformat = string.match, string.format
+local match, format, gsub, sub = string.match, string.format, string.gsub, string.sub
+local GetItemCount = GetItemCount
+local config, cfg, msg
 local lootmessage, moneymessage, moneyformat
+
+local vercheck, twofour
+do
+    local version = GetBuildInfo()
+    local vmaj, vmin, vrev = strsplit(".", version)
+    vmaj, vmin, vrev = tonumber(vmaj), tonumber(vmin), tonumber(vrev)
+
+    function vercheck(maj, min, rev)
+        if not maj or maj >= vmaj then
+            if not min or min >= vmin then
+                if not rev or rev >= vrev then
+                    return true
+                end
+            end
+        end
+        return false
+    end
+    twofour = vercheck(2, 4)
+end
 -- }}}1
 
 -- Localization {{{1
@@ -37,8 +50,8 @@ CHAT_MSG_LOOTALERT_MONEY = CHAT_MSG_MONEY
 -- Chat {{{1
 -- These bits courtesy wowwiki, with modification
 local function FireChatEvent(evt, a1, a2, a3, a4, a5, a6, a7, a8, a9)
-    local bIsChat = strsub(evt, 1, 9) == "CHAT_MSG_"
-    local chattype = strsub(evt, 10)
+    local bIsChat = sub(evt, 1, 9) == "CHAT_MSG_"
+    local chattype = sub(evt, 10)
 
     for i=1, NUM_CHAT_WINDOWS do
         if not bIsChat or config.chatsettings[i] then
@@ -48,53 +61,6 @@ local function FireChatEvent(evt, a1, a2, a3, a4, a5, a6, a7, a8, a9)
             ChatFrame_OnEvent(evt)
         end
     end
-end
-
-local ORIG_GetChatWindowMessages = GetChatWindowMessages
-function GetChatWindowMessages(n)
-    local ret = config.chatsettings[n]
-    if config.chatsettings[n] then
-        ret = "LOOTREFORMATTED"
-    end
-    return ORIG_GetChatWindowMessages(n), ret
-end
-
-local ORIG_AddChatWindowMessages = AddChatWindowMessages
-function AddChatWindowMessages(n, chattype)
-    if chattype == "LOOTREFORMATTED" then
-        config.chatsettings[n] = true
-        local this = _G["ChatFrame"..n]
-        table.insert(this.messageTypeList, "LOOTREFORMATTED")
-    else
-        ORIG_AddChatWindowMessages(n, chattype)
-    end
-end
-
-local ORIG_RemoveChatWindowMessages = RemoveChatWindowMessages
-function RemoveChatWindowMessages(n, chattype)
-    if chattype == "LOOTREFORMATTED" then
-        config.chatsettings[n] = false
-        local this = _G["ChatFrame"..n]
-        for index, group in pairs(this.messageTypeList) do
-            if group == "LOOTREFORMATTED" then
-                this.messageTypeList[index] = nil
-            end
-        end
-    else
-        ORIG_RemoveChatWindowMessages(n,chattype)
-    end
-end
-
-local ORIG_ChangeChatColor = ChangeChatColor
-function ChangeChatColor(chattype, r,g,b)
-  if config.chatsettings[chattype] then
-    config.chatsettings[chattype].r = r
-    config.chatsettings[chattype].g = g
-    config.chatsettings[chattype].b = b
-    FireChatEvent("UPDATE_CHAT_COLOR", chattype, r, g, b)
-  else
-    ORIG_ChangeChatColor(chattype,r,g,b)
-  end
 end
 
 local function chatmsg(chattype, txt)
@@ -111,6 +77,57 @@ end)
 LootAlert:RegisterEvent('PLAYER_LOGIN')
 
 local ITEM_QUALITY_COLORPATS = {}
+local goldpat, silverpat, copperpat
+
+function LootAlert:SetupHooks()
+    local ORIG_GetChatWindowMessages = GetChatWindowMessages
+    function GetChatWindowMessages(n)
+        local ret = config.chatsettings[n]
+        if config.chatsettings[n] then
+            ret = "LOOTREFORMATTED"
+        end
+        return ORIG_GetChatWindowMessages(n), ret
+    end
+
+    local ORIG_AddChatWindowMessages = AddChatWindowMessages
+    function AddChatWindowMessages(n, chattype)
+        if chattype == "LOOTREFORMATTED" then
+            config.chatsettings[n] = true
+            local this = _G["ChatFrame"..n]
+            table.insert(this.messageTypeList, "LOOTREFORMATTED")
+        else
+            ORIG_AddChatWindowMessages(n, chattype)
+        end
+    end
+
+    local ORIG_RemoveChatWindowMessages = RemoveChatWindowMessages
+    function RemoveChatWindowMessages(n, chattype)
+        if chattype == "LOOTREFORMATTED" then
+            config.chatsettings[n] = false
+            local this = _G["ChatFrame"..n]
+            for index, group in pairs(this.messageTypeList) do
+                if group == "LOOTREFORMATTED" then
+                    this.messageTypeList[index] = nil
+                end
+            end
+        else
+            ORIG_RemoveChatWindowMessages(n,chattype)
+        end
+    end
+
+    local ORIG_ChangeChatColor = ChangeChatColor
+    function ChangeChatColor(chattype, r,g,b)
+      if config.chatsettings[chattype] then
+        config.chatsettings[chattype].r = r
+        config.chatsettings[chattype].g = g
+        config.chatsettings[chattype].b = b
+        FireChatEvent("UPDATE_CHAT_COLOR", chattype, r, g, b)
+      else
+        ORIG_ChangeChatColor(chattype,r,g,b)
+      end
+    end
+end
+
 function LootAlert:PLAYER_LOGIN()
     if not LootAlertConfig then
         LootAlertConfig = {
@@ -154,6 +171,10 @@ function LootAlert:PLAYER_LOGIN()
     end
     config = LootAlertConfig
 
+    goldpat = config.moneycolor and '|cffffd700%sg|r ' or '%sg '
+    silverpat = config.moneycolor and '|cffc7c7cf%ss|r ' or '%ss '
+    copperpat = config.moneycolor and '|cffeda55f%sc|r' or '%sc'
+
     if MikSBT then
         cfg = config.msbt
         local msbteventsettings = {
@@ -164,18 +185,23 @@ function LootAlert:PLAYER_LOGIN()
             isCrit = cfg.sticky,
         }
         local DisplayEvent = MikSBT.Animations.DisplayEvent
-        msg = function(message, tex)
+        function msg(message, tex)
             DisplayEvent(msbteventsettings, message, cfg.icon and tex)
         end
     elseif SCT and SCT.DisplayText then
         cfg = config.sct
-        msg = function(message, tex)
+        function msg(message, tex)
             SCT:DisplayText(message, cfg.color, cfg.sticky, "event", cfg.scrollarea, nil, nil, cfg.icon and tex)
         end
     elseif CombatText_AddMessage then
         cfg = config.fct
-        msg = function(message, tex)
+        function msg(message)
             CombatText_AddMessage(message, COMBAT_TEXT_SCROLL_FUNCTION, cfg.color.r, cfg.color.g, cfg.color.b, cfg.sticky and "crit")
+        end
+    else
+        cfg = config.uierrorsframe
+        function msg(message)
+            UIErrorsFrame:AddMessage(message, cfg.color.r, cfg.color.g, cfg.color.b)
         end
     end
 
@@ -183,7 +209,7 @@ function LootAlert:PLAYER_LOGIN()
     self:RegisterEvent('CHAT_MSG_MONEY')
 
     for k, v in pairs(ITEM_QUALITY_COLORS) do
-        ITEM_QUALITY_COLORPATS[k] = strformat("|cff%02x%02x%02x", 255 * v.r, 255 * v.g, 255 * v.b)
+        ITEM_QUALITY_COLORPATS[k] = format("|cff%02x%02x%02x", 255 * v.r, 255 * v.g, 255 * v.b)
     end
 
     ChatTypeGroup.LOOTREFORMATTED = {
@@ -206,66 +232,86 @@ function LootAlert:PLAYER_LOGIN()
             table.insert(f.messageTypeList, "LOOTREFORMATTED")
         end
     end
+
+    self:SetupHooks()
 end
 -- }}}1
 
 -- Loot Event Handling {{{1 {{{1
-local solo = YOU_LOOT_MONEY:gsub('%%s', '(.*)')
-local grouped = LOOT_MONEY_SPLIT:gsub('%%s', '(.*)')
-local goldmatch = strformat('(%%d+) %s', GOLD)
-local silvermatch = strformat('(%%d+) %s', SILVER)
-local coppermatch = strformat('(%%d+) %s', COPPER)
-local goldpat = config.moneycolor and '|cffffd700%sg|r ' or '%sg '
-local silverpat = config.moneycolor and '|cffc7c7cf%ss|r ' or '%ss '
-local copperpat = config.moneycolor and '|cffeda55f%sc|r' or '%sc'
+local solo = gsub(YOU_LOOT_MONEY, '%%s', '(.*)')
+local grouped = gsub(LOOT_MONEY_SPLIT, '%%s', '(.*)')
+local goldmatch = format('(%%d+) %s', GOLD)
+local silvermatch = format('(%%d+) %s', SILVER)
+local coppermatch = format('(%%d+) %s', COPPER)
+local moneyiconlink = "|T"..moneyicon..":32|t"
 function LootAlert:CHAT_MSG_MONEY(message)
-    local moneys = strmatch(message, solo) or strmatch(message, grouped)
+    local moneys = match(message, solo) or match(message, grouped)
     if not moneys then
         return
     end
 
-    local gold = strmatch(moneys, goldmatch)
-    local silver = strmatch(moneys, silvermatch)
-    local copper = strmatch(moneys, coppermatch)
-    local out = strformat(moneymessage, gold and strformat(goldpat, gold) or '',
-                                        silver and strformat(silverpat, silver) or '',
-                                        copper and strformat(copperpat, copper) or '')
+    local gold = match(moneys, goldmatch)
+    local silver = match(moneys, silvermatch)
+    local copper = match(moneys, coppermatch)
+    local out = format(moneymessage, gold and format(goldpat, gold) or '',
+                                        silver and format(silverpat, silver) or '',
+                                        copper and format(copperpat, copper) or '')
 
     msg(out, moneyicon)
     if config.chatoutput then
+        if twofour then
+            out = moneyiconlink .. out
+        end
         chatmsg("LOOTALERT_MONEY", out)
     end
 end
 
 local linkpat = '|c........(|Hitem:%%d+:.-|h)|r'
-local single = LOOT_ITEM_SELF:gsub('%%s', linkpat)
-local multiple = LOOT_ITEM_SELF_MULTIPLE:gsub('%%d', '(%%d+)'):gsub('%%s', linkpat)
+local globalpatterns = {
+    "LOOT_ITEM_SELF_MULTIPLE",
+    "LOOT_ITEM_SELF",
+    "LOOT_ITEM_PUSHED_SELF_MULTIPLE",
+    "LOOT_ITEM_PUSHED_SELF",
+    "LOOT_ITEM_CREATED_SELF_MULTIPLE",
+    "LOOT_ITEM_CREATED_SELF",
+}
+local patterns = {}
+for _, global in ipairs(globalpatterns) do
+    local pattern = _G[global]
+    table.insert(patterns, (gsub(gsub(pattern, "%%d", "(%%d+)"), "%%s", linkpat)))
+end
+local npatterns = #patterns
 function LootAlert:CHAT_MSG_LOOT(message)
-    local item, count = strmatch(message, multiple)
-    if not item then
-        item = strmatch(message, single)
-        count = 1
-    else
-        count = tonumber(count)
+    local item, count
+    for i=1, npatterns do
+        item, count = match(message, patterns[i])
+        if item then
+            count = count or 1
+            break
+        end
     end
 
-    local itemid = strmatch(item, "item:(%d+)")
+    local itemid = item and match(item, "item:(%d+)")
     if itemid then
         local oldtotal = GetItemCount(itemid)
         local name, _, rarity, _, _, _, _, _, _, tex = GetItemInfo(itemid)
         local color = config.itemraritycolor and ITEM_QUALITY_COLORPATS[rarity] or ""
 
         local rest = " "
-        if count > 1 then
+        if tonumber(count) > 1 then
             rest = " +"..count
         end
         if oldtotal > 0 then
             rest = rest .. "("..oldtotal+count..")"
         end
 
-        msg(strformat(lootmessage, color, name, rest), tex)
+        msg(format(lootmessage, color, name, rest), tex)
         if config.chatoutput then
-            chatmsg("LOOTALERT_ITEM", strformat(lootmessage, color, item, rest))
+            local out = format(lootmessage, color, item, rest)
+            if twofour then
+                out = "|T"..tex..":32|t"..out
+            end
+            chatmsg("LOOTALERT_ITEM", out)
         end
     end
 end
