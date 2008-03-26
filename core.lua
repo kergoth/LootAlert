@@ -38,25 +38,8 @@ local function print(...)
     DEFAULT_CHAT_FRAME:AddMessage(strjoin(" ", tostring(...)))
 end
 
-local isminver, twofour
-do
-    local version = GetBuildInfo()
-    local vmaj, vmin, vrev = tonumber(strsplit(".", version))
-
-    function isminver(maj, min, rev)
-        if (not maj or vmaj >= maj) and
-           (not min or vmin >= min) and
-           (not rev or vrev >= rev) then
-            return true
-        else
-            return false
-        end
-    end
-    twofour = isminver(2, 4)
-end
-
 local function texlink(...)
-    if not twofour or not db.icon then
+    if not db.icon then
         return ""
     end
     return "|T"..strjoin(":", ...).."|t"
@@ -134,7 +117,7 @@ function LootAlert:SetupMoneyPatterns()
     silverpat = "%s"
     copperpat = "%s"
 
-    if twofour and db.moneyicons then
+    if db.moneyicons then
         local height = db.iconheight
         local width = db.iconwidth
         goldpat = goldpat .. texlink(iconpath.."\\UI-GoldIcon", height, width, 2, -1)
@@ -224,11 +207,7 @@ function LootAlert:CHAT_MSG_MONEY(event, message)
                                         silver and format(silverpat, silver) or '',
                                         copper and format(copperpat, copper) or '')
 
-    local ico
-    if not twofour then
-        ico = moneyicon
-    end
-    self:msg(out, ico)
+    self:msg(out)
     if db.chatoutput then
         chatmsg("LOOTALERT_MONEY", out, ico)
     end
