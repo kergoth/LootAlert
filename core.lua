@@ -77,7 +77,7 @@ end
 local function chatmsg(chattype, message, tex)
     local f = _G["ChatFrame"..db.chatframe]
     local font, height = f:GetFont()
-    local texlink = tex and texlink(tex, height, height, 2, -5) or ""
+    local texlink = tex and texlink(tex, height, height, 2, -1) or ""
     f:AddMessage(format(message, texlink), white.r, white.g, white.b)
 end
 -- }}}1
@@ -137,9 +137,9 @@ function LootAlert:SetupMoneyPatterns()
     if twofour and db.moneyicons then
         local height = db.iconheight
         local width = db.iconwidth
-        goldpat = goldpat .. texlink(iconpath.."\\UI-GoldIcon", height, width, 2, -5)
-        silverpat = silverpat .. texlink(iconpath.."\\UI-SilverIcon", height, width, 2, -5)
-        copperpat = copperpat .. texlink(iconpath.."\\UI-CopperIcon", height, width, 2, -5)
+        goldpat = goldpat .. texlink(iconpath.."\\UI-GoldIcon", height, width, 2, -1)
+        silverpat = silverpat .. texlink(iconpath.."\\UI-SilverIcon", height, width, 2, -1)
+        copperpat = copperpat .. texlink(iconpath.."\\UI-CopperIcon", height, width, 2, -1)
     else
         goldpat = goldpat.."|cffffd700g|r "
         silverpat = silverpat.."|cffc7c7cfs|r "
