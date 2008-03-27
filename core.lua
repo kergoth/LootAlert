@@ -81,7 +81,7 @@ local defaults = {
         itemraritycolor = true,
         moneyicons = true,
 
-        chatoutput = true,
+        chatoutput = false,
         chatframe = 4,
 
         icon = true,
