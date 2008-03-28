@@ -1,3 +1,8 @@
+5:
+* Change Item Quality Threshold into a dropdown instead of a slider.
+* Change the layout of the output settings so they aren't cut off in Interface
+  Options.
+* Update LibSink-2.0 to fix the bug with AceConfig-3.0 scrollAreas config.
 4:
 * Added Item Quality Threshold option, so you can hide greys if you want to.
 * Add in game configuration in the Interface Options and via
