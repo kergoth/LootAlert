@@ -47,7 +47,7 @@ local options = {
     handler = LootAlert,
     name = "LootAlert",
     type = "group",
-    --     childGroups = "tab",
+    childGroups = "tab",
     set = function (info, v)
         db[info[#info]] = v
     end,
