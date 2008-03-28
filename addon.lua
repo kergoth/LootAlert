@@ -8,7 +8,6 @@
 local iconpath = "Interface\\AddOns\\LootAlert\\Icons"
 local white = {r=1, g=1, b=1}
 local match, format, gsub, sub = string.match, string.format, string.gsub, string.sub
-local GetItemCount = GetItemCount
 local db
 -- }}}1
 
@@ -200,6 +199,7 @@ for _, global in ipairs(globalpatterns) do
 end
 local npatterns = #patterns
 
+local GetItemCount, GetItemInfo = GetItemCount, GetItemInfo
 function LootAlert:CHAT_MSG_LOOT(event, message)
     local item, count
     for i=1, npatterns do
