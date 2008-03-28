@@ -88,10 +88,8 @@ local options = {
             order = 20,
             name = L["Item Quality Threshold"],
             desc = L["Hide items looted with a lower quality than this."],
-            type = "range",
-            min = 0,
-            max = 6,
-            step = 1,
+            type = "select",
+            values = {},
         },
         itemqualitycolor = {
             order = 30,
@@ -125,6 +123,19 @@ function LootAlert:SetupMoneyPatterns()
     end
 end
 
+local ITEM_QUALITY_COLORPATS = {}
+for k, v in pairs(ITEM_QUALITY_COLORS) do
+    ITEM_QUALITY_COLORPATS[k] = format("|cff%02x%02x%02x", 255 * v.r, 255 * v.g, 255 * v.b)
+end
+local i = 0
+while true do
+    local desc = _G["ITEM_QUALITY"..i.."_DESC"]
+    if not desc then
+        break
+    end
+    options.args.itemqualitythres.values[i] = desc
+    i = i + 1
+end
 
 function LootAlert:OnInitialize()
     self.db = acedb:New("LootAlertConfig", defaults)
@@ -189,10 +200,6 @@ for _, global in ipairs(globalpatterns) do
 end
 local npatterns = #patterns
 
-local ITEM_QUALITY_COLORPATS = {}
-for k, v in pairs(ITEM_QUALITY_COLORS) do
-    ITEM_QUALITY_COLORPATS[k] = format("|cff%02x%02x%02x", 255 * v.r, 255 * v.g, 255 * v.b)
-end
 function LootAlert:CHAT_MSG_LOOT(event, message)
     local item, count
     for i=1, npatterns do
