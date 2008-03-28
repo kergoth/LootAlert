@@ -1,6 +1,6 @@
 ﻿--[[
 Name: Sink-2.0
-Revision: $Rev: 62534 $
+Revision: $Rev: 66757 $
 Author(s): Rabbit (rabbit.magtheridon@gmail.com), Antiarc (cheal@gmail.com)
 Website: http://rabbit.nihilum.eu
 Documentation: http://wiki.wowace.com/index.php/Sink-2.0
@@ -32,7 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 -- Sink-2.0
 
 local SINK20 = "LibSink-2.0"
-local SINK20_MINOR = string.match("$Revision: 62534 $", "[0-9]+")
+local SINK20_MINOR = string.match("$Revision: 66757 $", "[0-9]+")
 
 local sink = LibStub:NewLibrary(SINK20, SINK20_MINOR)
 if not sink then return end
@@ -509,9 +509,11 @@ do
 					else
 						if sink.storageForAddon[addon].sink20OutputSink == key then
 							local sa = getScrollAreasForAddon(key)
-                            for k,v in ipairs(sa) do
-                                sa[k] = nil
-                                sa[v] = v
+                            if sa then
+                                for k,v in ipairs(sa) do
+                                    sa[k] = nil
+                                    sa[v] = v
+                                end
                             end
 							options["Ace3"][addon].args.ScrollArea.values = sa or emptyTable
 							options["Ace3"][addon].args.ScrollArea.disabled = not sa
@@ -529,9 +531,11 @@ do
 						sink.storageForAddon[addon].sink20Sticky = v
 					elseif v then
 						local sa = getScrollAreasForAddon(key)
-                        for k,v in ipairs(sa) do
-                            sa[k] = nil
-                            sa[v] = v
+                        if sa then
+                            for k,v in ipairs(sa) do
+                                sa[k] = nil
+                                sa[v] = v
+                            end
                         end
 						options["Ace3"][addon].args.ScrollArea.values = sa or emptyTable
 						options["Ace3"][addon].args.ScrollArea.disabled = not sa
