@@ -1,3 +1,11 @@
+4:
+* Added Item Quality Threshold option, so you can hide greys if you want to.
+* Add in game configuration in the Interface Options and via
+  /la or /lootalert.
+* Use an embedded texture for the item icon for MSBT instead of using its
+  skill icon stuff.
+* Add the missing embedded libraries.
+* Update to use LibSink-2.0 for output.
 3:
 * Prep for in game config.
 * Fixups, cleanups, and add support for 2.4 texture links.
