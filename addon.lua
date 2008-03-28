@@ -1,184 +1,147 @@
 -- LootAlert is a simple addon that displays what items you've looted, how
 -- many, and what the total number of that item is in your inventory. It
--- colors the item name in the message by item rarity, and displays looted
+-- colors the item name in the message by item quality, and displays looted
 -- gold (colored by gold/silver/copper). It supports showing an icon for sct &
 -- msbt. It can output to sct, msbt, blizzard fct, or the UIErrorsFrame.
 
 -- Locals {{{1
-local moneyicon = "Interface\\Icons\\INV_Ore_Gold_01"
 local iconpath = "Interface\\AddOns\\LootAlert\\Icons"
 local white = {r=1, g=1, b=1}
 local match, format, gsub, sub = string.match, string.format, string.gsub, string.sub
 local GetItemCount = GetItemCount
-local select = select
-local config, cfg, msg
-local lootmessage, moneymessage, moneyformat
 local db
 -- }}}1
 
--- Utility Functions {{{1
-local _tostring, _tonumber = tostring, tonumber
-local tostring, tonumber
-do
-    function tostring(...)
-        if select('#', ...) == 0 then
-            return
-        end
-        return _tostring((select(1, ...))), tostring(select(2, ...))
-    end
-    function tonumber(...)
-        if select('#', ...) == 0 then
-            return
-        end
-        return _tonumber((select(1, ...))), tonumber(select(2, ...))
-    end
-end
-
-local function print(...)
-    DEFAULT_CHAT_FRAME:AddMessage(strjoin(" ", tostring(...)))
-end
-
-local function texlink(...)
-    if not db.icon then
-        return ""
-    end
-    return "|T"..strjoin(":", ...).."|t"
-end
--- }}}1
-
--- Localization {{{1
-if GetLocale() == 'zhTW' then
-    lootmessage = '拾取: %s%%s%s|r%s'
-    moneymessage = '拾取: %s%s%s'
-else
-    lootmessage = 'Loot: %s%%s%s|r%s'
-    moneymessage = 'Loot: %s%s%s'
-end
--- }}}1
-
--- Chat {{{1
-local function chatmsg(chattype, message, tex)
-    local f = _G["ChatFrame"..db.chatframe]
-    local font, height = f:GetFont()
-    local texlink = tex and texlink(tex, height, height, 2, -1) or ""
-    f:AddMessage(format(message, texlink), white.r, white.g, white.b)
-end
--- }}}1
-
 -- Initialization {{{1
-LootAlert = LibStub("AceAddon-3.0"):NewAddon("LootAlert", "AceEvent-3.0", "AceConsole-3.0")
-local AceDB = LibStub("AceDB-3.0")
-local AceConfig = LibStub("AceConfig-3.0")
-local AceConfigDialog = LibStub("AceConfigDialog-3.0")
--- local L = LibStub("AceLocale-3.0"):GetLocale("LootAlert")
+LootAlert = LibStub("AceAddon-3.0"):NewAddon("LootAlert", "AceEvent-3.0", "AceConsole-3.0", "LibSink-2.0")
+local L = LibStub("AceLocale-3.0"):GetLocale("LootAlert")
+local acedb = LibStub("AceDB-3.0")
+local reg = LibStub("AceConfigRegistry-3.0")
+local dialog = LibStub("AceConfigDialog-3.0")
 
-local ITEM_QUALITY_COLORPATS = {}
+local lootmessage, moneymessage = L["LOOTMESSAGE"], L["MONEYMESSAGE"]
 local goldpat, silverpat, copperpat
 local defaults = {
     profile = {
         enabled = true,
 
-        itemraritycolor = true,
+        itemqualitythres = 0,
+        itemqualitycolor = true,
+
+        itemicon = true,
         moneyicons = true,
 
-        chatoutput = false,
-        chatframe = 4,
+        color = {
+            r = 1,
+            g = 1,
+            b = 1,
+            a = 1,
+        },
 
-        icon = true,
-        iconheight = 18,
-        iconwidth = 18,
-
-        msbt = {
-            scrollarea = "Static",
-            sticky = false,
-            color = {
-                r = white.r * 255,
-                g = white.g * 255,
-                b = white.b * 255,
-            },
+        output = {
+            sink20OutputSink = "Default",
         },
-        sct = {
-            scrollarea = 1,
-            sticky = false,
-            color = white,
+    },
+}
+local options = {
+    handler = LootAlert,
+    name = "LootAlert",
+    type = "group",
+    --     childGroups = "tab",
+    set = function (info, v)
+        db[info[#info]] = v
+    end,
+    get = function(info)
+        return db[info[#info]]
+    end,
+    args = {
+        enabled = {
+            order = 0,
+            name = L["Enabled"],
+            desc = L["Enable/Disable the addon."],
+            type = "toggle",
+            set = function(info, v)
+                db.enabled = v
+                if v then
+                    LootAlert:Enable()
+                else
+                    LootAlert:Disable()
+                end
+            end,
         },
-        fct = {
-            sticky = false,
-            color = white,
+        textcolor = {
+            order = 10,
+            name = L["Text Color"],
+            type = "color",
+            hasAlpha = true,
+            get = function(info)
+                return db.color.r, db.color.g, db.color.b, db.color.a
+            end,
+            set = function(info, r, g, b, a)
+                db.color.r = r
+                db.color.g = g
+                db.color.b = b
+                db.color.a = a
+            end,
         },
-        uierrorsframe = {
-            color = white,
+        itemqualitythres = {
+            order = 20,
+            name = L["Item Quality Threshold"],
+            desc = L["Hide items looted with a lower quality than this."],
+            type = "range",
+            min = 0,
+            max = 6,
+            step = 1,
+        },
+        itemqualitycolor = {
+            order = 30,
+            name = L["Item Quality Coloring"],
+            desc = L["Color the item based on its quality, like an item link."],
+            type = "toggle",
+        },
+        itemicon = {
+            order = 40,
+            name = L["Show Item Icon"],
+            type = "toggle",
+        },
+        moneyicons = {
+            order = 50,
+            name = L["Show Money Icons"],
+            desc = L["Show icons for gold/silver/copper rather than g/s/c."],
+            type = "toggle",
         },
     },
 }
 
 function LootAlert:SetupMoneyPatterns()
-    goldpat = "%s"
-    silverpat = "%s"
-    copperpat = "%s"
-
     if db.moneyicons then
-        local height = db.iconheight
-        local width = db.iconwidth
-        goldpat = goldpat .. texlink(iconpath.."\\UI-GoldIcon", height, width, 2, -1)
-        silverpat = silverpat .. texlink(iconpath.."\\UI-SilverIcon", height, width, 2, -1)
-        copperpat = copperpat .. texlink(iconpath.."\\UI-CopperIcon", height, width, 2, -1)
+        goldpat = "%s|T" .. iconpath.."\\UI-GoldIcon::|t"
+        silverpat = "%s|T" .. iconpath.."\\UI-SilverIcon::|t"
+        copperpat = "%s|T" .. iconpath.."\\UI-CopperIcon::|t"
     else
-        goldpat = goldpat.."|cffffd700g|r "
-        silverpat = silverpat.."|cffc7c7cfs|r "
-        copperpat = copperpat.."|cffeda55fc|r"
+        goldpat = "%s|cffffd700g|r "
+        silverpat = "%s|cffc7c7cfs|r "
+        copperpat = "%s|cffeda55fc|r"
     end
 end
+
 
 function LootAlert:OnInitialize()
-    self.db = AceDB:New("LootAlertConfig", defaults)
+    self.db = acedb:New("LootAlertConfig", defaults)
     db = self.db.profile
-
     self:SetEnabledState(db.enabled)
+    self:SetSinkStorage(db.output)
 
-    for k, v in pairs(ITEM_QUALITY_COLORS) do
-        ITEM_QUALITY_COLORPATS[k] = format("|cff%02x%02x%02x", 255 * v.r, 255 * v.g, 255 * v.b)
+    options.args.output = self:GetSinkAce3OptionsDataTable()
+    options.args.output.order = 60
+    reg:RegisterOptionsTable("LootAlert", options)
+    if dialog.AddToBlizOptions then
+        dialog:AddToBlizOptions("LootAlert")
     end
+    self:RegisterChatCommand("lootalert", function() dialog:Open("LootAlert") end)
+    self:RegisterChatCommand("la", function() dialog:Open("LootAlert") end)
 
-    self:RegisterEvent("PLAYER_LOGIN", "FirstLoad")
-end
-
-local msbteventsettings
-function LootAlert:FirstLoad()
-    if MikSBT then
-        cfg = db.msbt
-        msbteventsettings = {
-            colorR = cfg.color.r,
-            colorG = cfg.color.g,
-            colorB = cfg.color.b,
-            scrollArea = cfg.scrollarea,
-            isCrit = cfg.sticky,
-        }
-        local DisplayEvent = MikSBT.Animations.DisplayEvent
-        function LootAlert:msg(message, tex)
-            DisplayEvent(msbteventsettings, format(message, ""), db.icon and tex)
-        end
-    elseif SCT and SCT.DisplayText then
-        cfg = db.sct
-        function LootAlert:msg(message, tex)
-            SCT:DisplayText(format(message, ""), cfg.color, cfg.sticky, "event", cfg.scrollarea, nil, nil, db.icon and tex)
-        end
-    elseif CombatText_AddMessage then
-        cfg = db.fct
-        function LootAlert:msg(message, tex)
-            local height = COMBAT_TEXT_HEIGHT
-            local texlnk = tex and texlink(tex, height, height, 2, -5) or ""
-            CombatText_AddMessage(format(message, texlnk), COMBAT_TEXT_SCROLL_FUNCTION, cfg.color.r, cfg.color.g, cfg.color.b, cfg.sticky and "crit")
-        end
-    else
-        cfg = db.uierrorsframe
-        function LootAlert:msg(message, tex)
-            local f = UIErrorsFrame
-            local _, height = f:GetFont()
-            local texlnk = tex and texlink(tex, height, height, 2, -5) or ""
-            f:AddMessage(format(message, texlnk), cfg.color.r, cfg.color.g, cfg.color.b)
-        end
-    end
+	dialog:SetDefaultSize("LootAlert", 450, 400)
     self:SetupMoneyPatterns()
 end
 
@@ -207,10 +170,7 @@ function LootAlert:CHAT_MSG_MONEY(event, message)
                                         silver and format(silverpat, silver) or '',
                                         copper and format(copperpat, copper) or '')
 
-    self:msg(out)
-    if db.chatoutput then
-        chatmsg("LOOTALERT_MONEY", out, ico)
-    end
+    self:Pour(out, db.color.r, db.color.g, db.color.b)
 end
 
 local linkpat = '|c........(|Hitem:%%d+:.-|h)|r'
@@ -228,6 +188,11 @@ for _, global in ipairs(globalpatterns) do
     table.insert(patterns, (gsub(gsub(pattern, "%%d", "(%%d+)"), "%%s", linkpat)))
 end
 local npatterns = #patterns
+
+local ITEM_QUALITY_COLORPATS = {}
+for k, v in pairs(ITEM_QUALITY_COLORS) do
+    ITEM_QUALITY_COLORPATS[k] = format("|cff%02x%02x%02x", 255 * v.r, 255 * v.g, 255 * v.b)
+end
 function LootAlert:CHAT_MSG_LOOT(event, message)
     local item, count
     for i=1, npatterns do
@@ -241,11 +206,13 @@ function LootAlert:CHAT_MSG_LOOT(event, message)
     local itemid = item and match(item, "item:(%d+)")
     if itemid then
         local oldtotal = GetItemCount(itemid)
-        local name, _, rarity, _, _, _, _, _, _, tex = GetItemInfo(itemid)
-        local color = db.itemraritycolor and ITEM_QUALITY_COLORPATS[rarity] or ""
+        local name, _, quality, _, _, _, _, _, _, tex = GetItemInfo(itemid)
+        if quality < db.itemqualitythres then
+            return
+        end
 
+        local color = db.itemqualitycolor and ITEM_QUALITY_COLORPATS[quality] or ""
         local rest = " "
-
         if tonumber(count) > 1 then
             rest = " +"..count
         end
@@ -253,11 +220,7 @@ function LootAlert:CHAT_MSG_LOOT(event, message)
             rest = rest .. "("..oldtotal+count..")"
         end
 
-        self:msg(format(lootmessage, color, name, rest), tex)
-        if db.chatoutput then
-            local out = format(lootmessage, color, item, rest)
-            chatmsg("LOOTALERT_ITEM", out, tex)
-        end
+        self:Pour(format(lootmessage, color..(db.itemicon and "|T"..tex.."::|t" or "")..name, rest), db.color.r, db.color.g, db.color.b)
     end
 end
 -- }}}1
