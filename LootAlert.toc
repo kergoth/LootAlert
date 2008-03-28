@@ -10,4 +10,4 @@
 ## OptionalDeps: Ace3
 ## SavedVariables: LootAlertConfig
 
-core.lua
+addon.lua
