@@ -509,6 +509,10 @@ do
 					else
 						if sink.storageForAddon[addon].sink20OutputSink == key then
 							local sa = getScrollAreasForAddon(key)
+                            for k,v in ipairs(sa) do
+                                sa[k] = nil
+                                sa[v] = v
+                            end
 							options["Ace3"][addon].args.ScrollArea.values = sa or emptyTable
 							options["Ace3"][addon].args.ScrollArea.disabled = not sa
 							options["Ace3"][addon].args.Sticky.disabled = not sink.stickyAddons[key]
@@ -525,6 +529,10 @@ do
 						sink.storageForAddon[addon].sink20Sticky = v
 					elseif v then
 						local sa = getScrollAreasForAddon(key)
+                        for k,v in ipairs(sa) do
+                            sa[k] = nil
+                            sa[v] = v
+                        end
 						options["Ace3"][addon].args.ScrollArea.values = sa or emptyTable
 						options["Ace3"][addon].args.ScrollArea.disabled = not sa
 						options["Ace3"][addon].args.Sticky.disabled = not sink.stickyAddons[key]
