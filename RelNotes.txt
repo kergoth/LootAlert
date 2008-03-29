@@ -1,3 +1,9 @@
+6:
+* Add "Example Messages" to options.
+* Add ability to override / disable the "Loot: " prefix.
+* Reorganize the options, moving Output to its own subcategory in the
+  interface options and grouping the formatting options together.
+* Fix the behavior of the Text Color option.
 5:
 * Change Item Quality Threshold into a dropdown instead of a slider.
 * Change the layout of the output settings so they aren't cut off in Interface
