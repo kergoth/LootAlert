@@ -274,7 +274,7 @@ function LootAlert:CHAT_MSG_MONEY(event, message)
     self:Pour(self:GetMoneyMessage(gold, silver, copper))
 end
 
-local linkpat = '(|Hitem:%%d+:.-|h)|r'
+local linkpat = '|c........(|Hitem:%%d+:.-|h)|r'
 local globalpatterns = {
     "LOOT_ITEM_SELF_MULTIPLE",
     "LOOT_ITEM_SELF",
