@@ -6,11 +6,20 @@ if L then
     L["Hide items looted with a lower quality than this."] = true
     L["Item Quality Coloring"] = true
     L["Color the item based on its quality, like an item link."] = true
-    L["Show Item Icon"] = true
-    L["Show Money Icons"] = true
-    L["Show icons for gold/silver/copper rather than g/s/c."] = true
+    L["Item Icon"] = true
     L["Text Color"] = true
 
-    L["LOOTMESSAGE"] = "Loot: %s|r%s"
-    L["MONEYMESSAGE"] = "Loot: %s%s%s"
+    L["Money Format"] = true
+    L["Condensed"] = true
+    L["Text"] = true
+    L["Full"] = true
+
+    L["Example Messages"] = true
+    L["Formatting Options"] = true
+
+    L["Prefix"] = true
+    L["Enable a text prefix (i.e. 'Loot: ')"] = true
+    L["Prefix Text"] = true
+
+    L["Output"] = true
 end
