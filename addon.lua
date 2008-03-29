@@ -33,7 +33,7 @@ local defaults = {
         itemqualitycolor = true,
         itemicon = true,
         moneyformat = 3,
-        prefix = "Loot: ",
+        prefix = L["Loot: "],
 
         output = {
             sink20OutputSink = "Default",

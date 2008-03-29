@@ -22,4 +22,5 @@ if L then
     L["Prefix Text"] = true
 
     L["Output"] = true
+    L["Loot: "] = true
 end
