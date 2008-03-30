@@ -142,8 +142,8 @@ local options = {
     },
 }
 
-function setupExample(exnum, itemid, itemname, count, oldtotal)
-    local msg = LootAlert:GetItemMessage("|Hitem:"..itemid..":0:0:0:0:0:0:0|h["..itemname.."]|h", count, oldtotal)
+function setupExample(exnum, itemid, itemname, count, oldtotal, quality, tex)
+    local msg = LootAlert:GetItemMessage("|Hitem:"..itemid..":0:0:0:0:0:0:0|h", count, itemname, oldtotal, quality, tex)
     if msg then
         options.args.examples.args["ex"..exnum] = {
             type = "description",
@@ -155,8 +155,8 @@ function setupExample(exnum, itemid, itemname, count, oldtotal)
     end
 end
 function LootAlert:UpdateExamples(dontnotify)
-    setupExample(1, 27442, "Goldenscale Vendorfish", 2, 1)
-    setupExample(2, 28108, "Power Infused Mushroom", 1, 0)
+    setupExample(1, 27442, "Goldenscale Vendorfish", 2, 1, 0, "Interface\\Icons\\INV_Misc_Fish_42")
+    setupExample(2, 28108, "Power Infused Mushroom", 1, 0, 3, "Interface\\Icons\\INV_Mushroom_11")
     options.args.examples.args.ex3 = {
         type = "description",
         order = 3,
@@ -233,11 +233,14 @@ function LootAlert:GetMoneyMessage(gold, silver, copper)
     return format("|cff%02x%02x%02x%s|r%s|r", db.color.r, db.color.g, db.color.b, db.prefix, moneystr)
 end
 
-function LootAlert:GetItemMessage(itemlink, count, total)
+function LootAlert:GetItemMessage(itemlink, count, name, total, quality, tex)
     local itemid = itemlink and match(itemlink, "item:(%d+)")
     if itemid then
         local oldtotal = total or GetItemCount(itemid)
-        local name, _, quality, _, _, _, _, _, _, tex = GetItemInfo(itemid)
+        if not name then
+            local _
+            name, _, quality, _, _, _, _, _, _, tex = GetItemInfo(itemid)
+        end
         if quality < db.itemqualitythres then
             return
         end
