@@ -7,7 +7,7 @@
 ## LoadOnDemand: 0
 ## X-Category: Interface
 ## X-eMail: clarson at kergoth dot com
-## OptionalDeps: Ace3
+## OptionalDeps: Ace3, LibSink-2.0
 ## SavedVariables: LootAlertConfig
 
 libs\LibStub\LibStub.lua
