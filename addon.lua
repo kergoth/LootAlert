@@ -103,7 +103,6 @@ local options = {
                         return db.color.r / 255, db.color.g / 255, db.color.b / 255
                     end,
                     set = function(info, r, g, b)
-                        LootAlert:Print(info, r, g, b)
                         db.color.r = r * 255
                         db.color.g = g * 255
                         db.color.b = b * 255
