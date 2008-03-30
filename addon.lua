@@ -6,7 +6,6 @@
 
 -- Locals {{{1
 local iconpath = "Interface\\AddOns\\LootAlert\\Icons"
-local white = {r=1, g=1, b=1}
 local match, format, gsub, sub = string.match, string.format, string.gsub, string.sub
 local db
 -- }}}1
