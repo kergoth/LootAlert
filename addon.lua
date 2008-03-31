@@ -39,130 +39,148 @@ local defaults = {
         },
     },
 }
-local options = {
-    handler = LootAlert,
-    name = "LootAlert",
-    type = "group",
-    get = function(info)
-        return db[info.arg]
-    end,
-    set = function(info, v)
-        db[info.arg] = v
-        LootAlert:UpdateExamples()
-    end,
-    args = {
-        enabled = {
-            order = 0,
-            name = L["Enabled"],
-            desc = L["Enable/Disable the addon."],
-            type = "toggle",
-            get = function()
-                return db.enabled
-            end,
-            set = function(info, v)
-                db.enabled = v
-                if v then
-                    LootAlert:Enable()
-                else
-                    LootAlert:Disable()
-                end
-            end,
-        },
-        examples = {
-            order = 5,
-            type = "group",
-            inline = true,
-            name = L["Example Messages"],
-            args = {
-            },
-        },
-        itemqualitythres = {
-            order = 20,
-            arg = "itemqualitythres",
-            name = L["Item Quality Threshold"],
-            desc = L["Hide items looted with a lower quality than this."],
-            type = "select",
-            values = {},
-        },
-        format = {
-            order = 30,
-            type = "group",
-            inline = true,
-            name = L["Formatting Options"],
-            args = {
-                lootprefix = {
-                    name = L["Prefix Text"],
-                    type = "input",
-                    arg = "prefix",
-                },
-                textcolor = {
-                    order = 10,
-                    name = L["Text Color"],
-                    type = "color",
-                    get = function(info)
-                        return db.color.r / 255, db.color.g / 255, db.color.b / 255
-                    end,
-                    set = function(info, r, g, b)
-                        db.color.r = r * 255
-                        db.color.g = g * 255
-                        db.color.b = b * 255
-                        LootAlert:UpdateExamples()
-                    end,
-                },
-                itemqualitycolor = {
-                    name = L["Item Quality Coloring"],
-                    desc = L["Color the item based on its quality, like an item link."],
-                    type = "toggle",
-                    arg = "itemqualitycolor",
-                },
-                itemicon = {
-                    name = L["Item Icon"],
-                    type = "toggle",
-                    arg = "itemicon",
-                },
-                moneyformat = {
-                    name = L["Money Format"],
-                    type = "select",
-                    arg = "moneyformat",
-                    values = {
-                        L["Condensed"],
-                        L["Text"],
-                        L["Full"],
-                    },
-                    set = function(info, v)
-                        db.moneyformat = v
-                        LootAlert:SetupMoneyPatterns()
-                        LootAlert:UpdateExamples()
-                    end,
-                },
-            },
-        },
-    },
-}
 
-function setupExample(exnum, itemid, itemname, count, oldtotal, quality, tex)
-    local msg = LootAlert:GetItemMessage("|Hitem:"..itemid..":0:0:0:0:0:0:0|h", count, itemname, oldtotal, quality, tex)
-    if msg then
-        options.args.examples.args["ex"..exnum] = {
-            type = "description",
-            name = msg,
-            order = exnum,
-        }
-    else
-        options.args.examples.args["ex"..exnum] = nil
-    end
-end
-function LootAlert:UpdateExamples(dontnotify)
-    setupExample(1, 27442, "Goldenscale Vendorfish", 2, 1, 0, "Interface\\Icons\\INV_Misc_Fish_42")
-    setupExample(2, 28108, "Power Infused Mushroom", 1, 0, 3, "Interface\\Icons\\INV_Mushroom_11")
-    options.args.examples.args.ex3 = {
-        type = "description",
-        order = 3,
-        name = self:GetMoneyMessage(5, 1, 24)
+local function getOptions()
+    local updateExamples
+    local options = {
+        handler = LootAlert,
+        name = "LootAlert",
+        type = "group",
+        get = function(info)
+            return db[info.arg]
+        end,
+        set = function(info, v)
+            db[info.arg] = v
+            updateExamples()
+        end,
+        args = {
+            enabled = {
+                order = 0,
+                name = L["Enabled"],
+                desc = L["Enable/Disable the addon."],
+                type = "toggle",
+                get = function()
+                    return db.enabled
+                end,
+                set = function(info, v)
+                    db.enabled = v
+                    if v then
+                        LootAlert:Enable()
+                    else
+                        LootAlert:Disable()
+                    end
+                end,
+            },
+            examples = {
+                order = 5,
+                type = "group",
+                inline = true,
+                name = L["Example Messages"],
+                args = {
+                },
+            },
+            itemqualitythres = {
+                order = 20,
+                arg = "itemqualitythres",
+                name = L["Item Quality Threshold"],
+                desc = L["Hide items looted with a lower quality than this."],
+                type = "select",
+                values = {},
+            },
+            format = {
+                order = 30,
+                type = "group",
+                inline = true,
+                name = L["Formatting Options"],
+                args = {
+                    lootprefix = {
+                        name = L["Prefix Text"],
+                        type = "input",
+                        arg = "prefix",
+                    },
+                    textcolor = {
+                        order = 10,
+                        name = L["Text Color"],
+                        type = "color",
+                        get = function(info)
+                            return db.color.r / 255, db.color.g / 255, db.color.b / 255
+                        end,
+                        set = function(info, r, g, b)
+                            db.color.r = r * 255
+                            db.color.g = g * 255
+                            db.color.b = b * 255
+                            updateExamples()
+                        end,
+                    },
+                    itemqualitycolor = {
+                        name = L["Item Quality Coloring"],
+                        desc = L["Color the item based on its quality, like an item link."],
+                        type = "toggle",
+                        arg = "itemqualitycolor",
+                    },
+                    itemicon = {
+                        name = L["Item Icon"],
+                        type = "toggle",
+                        arg = "itemicon",
+                    },
+                    moneyformat = {
+                        name = L["Money Format"],
+                        type = "select",
+                        arg = "moneyformat",
+                        values = {
+                            L["Condensed"],
+                            L["Text"],
+                            L["Full"],
+                        },
+                        set = function(info, v)
+                            db.moneyformat = v
+                            LootAlert:SetupMoneyPatterns()
+                            updateExamples()
+                        end,
+                    },
+                },
+            },
+        },
     }
-    if not dontnotify then
-        reg:NotifyChange("LootAlert")
+
+    local function setupExample(exnum, itemid, itemname, count, oldtotal, quality, tex)
+        local msg = LootAlert:GetItemMessage("|Hitem:"..itemid..":0:0:0:0:0:0:0|h", count, itemname, oldtotal, quality, tex)
+        if msg then
+            options.args.examples.args["ex"..exnum] = {
+                type = "description",
+                name = msg,
+                order = exnum,
+            }
+        else
+            options.args.examples.args["ex"..exnum] = nil
+        end
     end
+
+    function updateExamples(dontnotify)
+        setupExample(1, 27442, "Goldenscale Vendorfish", 2, 1, 0, "Interface\\Icons\\INV_Misc_Fish_42")
+        setupExample(2, 28108, "Power Infused Mushroom", 1, 0, 3, "Interface\\Icons\\INV_Mushroom_11")
+        options.args.examples.args.ex3 = {
+            type = "description",
+            order = 3,
+            name = self:GetMoneyMessage(5, 1, 24)
+        }
+        if not dontnotify then
+            reg:NotifyChange("LootAlert")
+        end
+    end
+
+    local i = 0
+    while true do
+        local desc = _G["ITEM_QUALITY"..i.."_DESC"]
+        if not desc then
+            break
+        end
+        options.args.itemqualitythres.values[i] = desc
+        i = i + 1
+    end
+
+    updateExamples(true)
+    return options
 end
 
 function LootAlert:SetupMoneyPatterns()
@@ -184,35 +202,20 @@ function LootAlert:SetupMoneyPatterns()
     end
 end
 
-local ITEM_QUALITY_COLORPATS = {}
-for k, v in pairs(ITEM_QUALITY_COLORS) do
-    ITEM_QUALITY_COLORPATS[k] = format("|cff%02x%02x%02x", 255 * v.r, 255 * v.g, 255 * v.b)
-end
-local i = 0
-while true do
-    local desc = _G["ITEM_QUALITY"..i.."_DESC"]
-    if not desc then
-        break
-    end
-    options.args.itemqualitythres.values[i] = desc
-    i = i + 1
-end
-
 function LootAlert:OnInitialize()
     self.db = acedb:New("LootAlertConfig", defaults)
     db = self.db.profile
     self:SetEnabledState(db.enabled)
     self:SetSinkStorage(db.output)
-
-    self.options = options
     self:SetupMoneyPatterns()
-    self:UpdateExamples(true)
-    reg:RegisterOptionsTable("LootAlert", options)
-    reg:RegisterOptionsTable("LootAlertOutput", self:GetSinkAce3OptionsDataTable())
+
+    reg:RegisterOptionsTable("LootAlert", getOptions)
+    reg:RegisterOptionsTable("LootAlert Output", function() return self:GetSinkAce3OptionsDataTable() end)
     if dialog.AddToBlizOptions then
         dialog:AddToBlizOptions("LootAlert")
-        dialog:AddToBlizOptions("LootAlertOutput", L["Output"], "LootAlert")
+        dialog:AddToBlizOptions("LootAlert Output", L["Output"], "LootAlert")
     end
+
     self:RegisterChatCommand("lootalert", function() InterfaceOptionsFrame_OpenToFrame(dialog.BlizOptions["LootAlert"].frame) end)
     self:RegisterChatCommand("la", function() InterfaceOptionsFrame_OpenToFrame(dialog.BlizOptions["LootAlert"].frame) end)
 end
@@ -231,6 +234,10 @@ function LootAlert:GetMoneyMessage(gold, silver, copper)
     return format("|cff%02x%02x%02x%s|r%s|r", db.color.r, db.color.g, db.color.b, db.prefix, moneystr)
 end
 
+local ITEM_QUALITY_COLORPATS = {}
+for k, v in pairs(ITEM_QUALITY_COLORS) do
+    ITEM_QUALITY_COLORPATS[k] = format("|cff%02x%02x%02x", 255 * v.r, 255 * v.g, 255 * v.b)
+end
 function LootAlert:GetItemMessage(itemlink, count, name, total, quality, tex)
     local itemid = itemlink and match(itemlink, "item:(%d+)")
     if itemid then
