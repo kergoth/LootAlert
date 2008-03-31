@@ -162,7 +162,7 @@ local function getOptions()
         options.args.examples.args.ex3 = {
             type = "description",
             order = 3,
-            name = self:GetMoneyMessage(5, 1, 24)
+            name = LootAlert:GetMoneyMessage(5, 1, 24)
         }
         if not dontnotify then
             reg:NotifyChange("LootAlert")
