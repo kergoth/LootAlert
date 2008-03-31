@@ -251,15 +251,17 @@ function LootAlert:GetItemMessage(itemlink, count, name, total, quality, tex)
         end
 
         local color = db.itemqualitycolor and ITEM_QUALITY_COLORPATS[quality] or ""
-        local rest = " "
+        local countstr = ""
+        local totalstr = ""
         if tonumber(count) > 1 then
-            rest = " +"..count
+            countstr = " +"..count
         end
         if oldtotal > 0 then
-            rest = rest .. "("..oldtotal+count..")"
+            totalstr = " ("..oldtotal+count..")"
         end
 
-        return format("|cff%02x%02x%02x%s%s|r|cff%02x%02x%02x%s|r", db.color.r, db.color.g, db.color.b, db.prefix, color..(db.itemicon and "|T"..tex.."::|t" or "")..name, db.color.r, db.color.g, db.color.b, rest)
+        local r, g, b = db.color.r, db.color.g, db.color.b
+        return format("|cff%02x%02x%02x%s%s|r|cff%02x%02x%02x%s%s|r", r, g, b, db.prefix, color..(db.itemicon and "|T"..tex.."::|t" or "")..name, r, g, b, countstr, totalstr)
     end
 end
 -- }}}1
