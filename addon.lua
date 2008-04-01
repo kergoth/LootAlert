@@ -203,7 +203,7 @@ function LootAlert:SetupMoneyPatterns()
 end
 
 function LootAlert:OnInitialize()
-    self.db = acedb:New("LootAlertConfig", defaults)
+    self.db = acedb:New("LootAlertConfig", defaults, "Default")
     db = self.db.profile
     self:SetEnabledState(db.enabled)
     self:SetSinkStorage(db.output)
