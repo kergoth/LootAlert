@@ -215,6 +215,7 @@ function LootAlert:OnInitialize()
         dialog:AddToBlizOptions("LootAlert")
         dialog:AddToBlizOptions("LootAlert Output", L["Output"], "LootAlert")
     end
+    LibStub("tekKonfig-AboutPanel").new("LootAlert", "LootAlert") -- About subcategory for bliz options
 
     self:RegisterChatCommand("lootalert", function() InterfaceOptionsFrame_OpenToFrame(dialog.BlizOptions["LootAlert"].frame) end)
     self:RegisterChatCommand("la", function() InterfaceOptionsFrame_OpenToFrame(dialog.BlizOptions["LootAlert"].frame) end)

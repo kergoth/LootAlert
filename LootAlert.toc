@@ -21,5 +21,6 @@ libs\AceConfig-3.0\AceConfig-3.0.xml
 libs\AceLocale-3.0\AceLocale-3.0.xml
 libs\LibSink-2.0\lib.xml
 
+tekKonfigAboutPanel.lua
 locale\enUS.lua
 addon.lua
