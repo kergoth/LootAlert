@@ -1,3 +1,10 @@
+8:
+* Add option to modify the loot chat messages to also have LootAlert's
+  formatting.
+* Add tek's "about" panel to the config.
+* Set default profile to Default, as I highly doubt anyone would need to change this per character.
+* Don't create our options tables until we need them.
+
 7:
 * Add LibSink-2.0 to OptDeps.
 * Hardcode some info for the examples, so they don't need to be in the
