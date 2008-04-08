@@ -21,6 +21,7 @@ local goldpat, silverpat, copperpat, moneysep
 local defaults = {
     profile = {
         enabled = true,
+        chat = true,
 
         color = {
             r = 255,
@@ -69,6 +70,17 @@ local function getOptions()
                     else
                         LootAlert:Disable()
                     end
+                end,
+            },
+            chat = {
+                order = 3,
+                name = L["Modify chat messages"],
+                desc = L["Modify loot chat messages to use LootAlert's formatting."],
+                type = "toggle",
+                arg = "chat",
+                set = function(info, v)
+                    db[info.arg] = v
+                    LootAlert:EnableChatFilter(v)
                 end,
             },
             examples = {
@@ -202,12 +214,25 @@ function LootAlert:SetupMoneyPatterns()
     end
 end
 
+local function processMoney(s)
+    return false, LootAlert:ProcessMoneyEvent(s)
+end
+local function processItems(s)
+    return false, LootAlert:ProcessItemEvents(s)
+end
+function LootAlert:EnableChatFilter(val)
+    local func = val and ChatFrame_AddMessageEventFilter or ChatFrame_RemoveMessageEventFilter
+    func("CHAT_MSG_MONEY", processMoney)
+    func("CHAT_MSG_LOOT", processItems)
+end
+
 function LootAlert:OnInitialize()
     self.db = acedb:New("LootAlertConfig", defaults, "Default")
     db = self.db.profile
     self:SetEnabledState(db.enabled)
     self:SetSinkStorage(db.output)
     self:SetupMoneyPatterns()
+    self:EnableChatFilter(db.chat)
 
     reg:RegisterOptionsTable("LootAlert", getOptions)
     reg:RegisterOptionsTable("LootAlert Output", function() return self:GetSinkAce3OptionsDataTable() end)
@@ -230,9 +255,20 @@ end
 -- Message Formatting {{{1
 function LootAlert:GetMoneyMessage(gold, silver, copper)
     local moneystr = strjoin(moneysep, (gold and format(goldpat, gold) or ''),
-                                       (silver and format(silverpat, silver) or ''),
-                                       (copper and format(copperpat, copper) or ''))
+    (silver and format(silverpat, silver) or ''),
+    (copper and format(copperpat, copper) or ''))
     return format("|cff%02x%02x%02x%s|r%s|r", db.color.r, db.color.g, db.color.b, db.prefix, moneystr)
+end
+function LootAlert:ProcessMoneyEvent(message)
+    local moneys = match(message, solo) or match(message, grouped)
+    if not moneys then
+        return
+    end
+
+    local gold = match(moneys, goldmatch)
+    local silver = match(moneys, silvermatch)
+    local copper = match(moneys, coppermatch)
+    return self:GetMoneyMessage(gold, silver, copper)
 end
 
 local ITEM_QUALITY_COLORPATS = {}
@@ -262,7 +298,37 @@ function LootAlert:GetItemMessage(itemlink, count, name, total, quality, tex)
         end
 
         local r, g, b = db.color.r, db.color.g, db.color.b
-        return format("|cff%02x%02x%02x%s%s|r|cff%02x%02x%02x%s%s|r", r, g, b, db.prefix, color..(db.itemicon and "|T"..tex.."::|t" or "")..name, r, g, b, countstr, totalstr)
+        return format("|cff%02x%02x%02x%s%s|r|cff%02x%02x%02x%s%s|r", r, g, b, db.prefix, color..(db.itemicon and "|T"..tex.."::|t" or "").."|Hitem:"..itemid..":0:0:0:0:0:0:0|h"..name.."|h", r, g, b, countstr, totalstr)
+    end
+end
+local linkpat = '|c........(|Hitem:%%d+:.-|h)|r'
+local patterns = {}
+local itemglobals = {
+    "LOOT_ITEM_SELF_MULTIPLE",
+    "LOOT_ITEM_SELF",
+    "LOOT_ITEM_PUSHED_SELF_MULTIPLE",
+    "LOOT_ITEM_PUSHED_SELF",
+    "LOOT_ITEM_CREATED_SELF_MULTIPLE",
+    "LOOT_ITEM_CREATED_SELF",
+}
+for _, global in ipairs(itemglobals) do
+    local pattern = _G[global]
+    table.insert(patterns, (gsub(gsub(pattern, "%%d", "(%%d+)"), "%%s", linkpat)))
+end
+local npatterns = #patterns
+local GetItemCount, GetItemInfo = GetItemCount, GetItemInfo
+function LootAlert:ProcessItemEvents(message)
+    local item, count
+    for i=1, npatterns do
+        item, count = match(message, patterns[i])
+        if item then
+            count = count or 1
+            break
+        end
+    end
+
+    if item then
+        return self:GetItemMessage(item, count)
     end
 end
 -- }}}1
@@ -274,6 +340,9 @@ local goldmatch = format('(%%d+) %s', GOLD)
 local silvermatch = format('(%%d+) %s', SILVER)
 local coppermatch = format('(%%d+) %s', COPPER)
 function LootAlert:CHAT_MSG_MONEY(event, message)
+    self:Pour(self:ProcessMoneyEvent(message))
+end
+function LootAlert:ProcessMoneyEvent(message)
     local moneys = match(message, solo) or match(message, grouped)
     if not moneys then
         return
@@ -282,37 +351,13 @@ function LootAlert:CHAT_MSG_MONEY(event, message)
     local gold = match(moneys, goldmatch)
     local silver = match(moneys, silvermatch)
     local copper = match(moneys, coppermatch)
-    self:Pour(self:GetMoneyMessage(gold, silver, copper))
+    return self:GetMoneyMessage(gold, silver, copper)
 end
 
-local linkpat = '|c........(|Hitem:%%d+:.-|h)|r'
-local globalpatterns = {
-    "LOOT_ITEM_SELF_MULTIPLE",
-    "LOOT_ITEM_SELF",
-    "LOOT_ITEM_PUSHED_SELF_MULTIPLE",
-    "LOOT_ITEM_PUSHED_SELF",
-    "LOOT_ITEM_CREATED_SELF_MULTIPLE",
-    "LOOT_ITEM_CREATED_SELF",
-}
-local patterns = {}
-for _, global in ipairs(globalpatterns) do
-    local pattern = _G[global]
-    table.insert(patterns, (gsub(gsub(pattern, "%%d", "(%%d+)"), "%%s", linkpat)))
-end
-local npatterns = #patterns
-local GetItemCount, GetItemInfo = GetItemCount, GetItemInfo
 function LootAlert:CHAT_MSG_LOOT(event, message)
-    local item, count
-    for i=1, npatterns do
-        item, count = match(message, patterns[i])
-        if item then
-            count = count or 1
-            break
-        end
-    end
-
-    if item then
-        self:Pour(self:GetItemMessage(item, count))
+    local out = self:ProcessItemEvents(message)
+    if out then
+        self:Pour(out)
     end
 end
 -- }}}1
