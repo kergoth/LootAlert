@@ -2,6 +2,8 @@ local L = LibStub("AceLocale-3.0"):NewLocale("LootAlert", "enUS", true)
 if L then
     L["Enabled"] = true
     L["Enable/Disable the addon."] = true
+    L["Modify chat messages"] = true
+    L["Modify loot chat messages to use LootAlert's formatting."] = true
     L["Item Quality Threshold"] = true
     L["Hide items looted with a lower quality than this."] = true
     L["Item Quality Coloring"] = true
