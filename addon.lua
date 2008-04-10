@@ -276,7 +276,7 @@ for k, v in pairs(ITEM_QUALITY_COLORS) do
     ITEM_QUALITY_COLORPATS[k] = format("|cff%02x%02x%02x", 255 * v.r, 255 * v.g, 255 * v.b)
 end
 function LootAlert:GetItemMessage(itemlink, count, name, total, quality, tex)
-    local itemstr = itemlink and match(itemlink, "(item:%d+:%d+:%d+:%d+:%d+:%d+:%d+:%d+)")
+    local itemstr = itemlink and match(itemlink, "(item:%d+:%d+:%d+:%d+:%d+:%d+:[-]?%d+:[-]?%d+)")
     if itemstr then
         local oldtotal = total or GetItemCount(itemlink)
         if not name then
