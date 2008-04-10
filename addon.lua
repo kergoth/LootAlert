@@ -276,12 +276,12 @@ for k, v in pairs(ITEM_QUALITY_COLORS) do
     ITEM_QUALITY_COLORPATS[k] = format("|cff%02x%02x%02x", 255 * v.r, 255 * v.g, 255 * v.b)
 end
 function LootAlert:GetItemMessage(itemlink, count, name, total, quality, tex)
-    local itemid = itemlink and match(itemlink, "item:(%d+)")
-    if itemid then
-        local oldtotal = total or GetItemCount(itemid)
+    local itemstr = itemlink and match(itemlink, "(item:%d+:%d+:%d+:%d+:%d+:%d+:%d+:%d+)")
+    if itemstr then
+        local oldtotal = total or GetItemCount(itemlink)
         if not name then
             local _
-            name, _, quality, _, _, _, _, _, _, tex = GetItemInfo(itemid)
+            name, _, quality, _, _, _, _, _, _, tex = GetItemInfo(itemlink)
         end
         if quality < db.itemqualitythres then
             return
@@ -298,7 +298,7 @@ function LootAlert:GetItemMessage(itemlink, count, name, total, quality, tex)
         end
 
         local r, g, b = db.color.r, db.color.g, db.color.b
-        return format("|cff%02x%02x%02x%s%s|r|cff%02x%02x%02x%s%s|r", r, g, b, db.prefix, color..(db.itemicon and "|T"..tex.."::|t" or "").."|Hitem:"..itemid..":0:0:0:0:0:0:0|h"..name.."|h", r, g, b, countstr, totalstr)
+        return format("|cff%02x%02x%02x%s%s|r|cff%02x%02x%02x%s%s|r", r, g, b, db.prefix, color..(db.itemicon and "|T"..tex.."::|t" or "").."|H"..itemstr.."|h"..name.."|h", r, g, b, countstr, totalstr)
     end
 end
 local linkpat = '|c........(|Hitem:%%d+:.-|h)|r'
