@@ -1,0 +1,10 @@
+## Interface: 11100
+## Title: MSBTCounter
+## Notes: Loot display for Mik's Scrolling Battle Text
+## Version: 1.0
+## Author: Kergoth
+## RequiredDeps: MikScrollingBattleText
+## X-Category: Interface
+## X-eMail: clarson@kergoth.com
+libs\SEEmbedBags\SEEmbedBags.lua
+core.lua
