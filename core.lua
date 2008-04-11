@@ -10,26 +10,12 @@ local function getitemid(itemlink)
 end
 
 
-local sebags = SpecialEventsEmbed:GetInstance("Bags 1")
-
 LootAlert = {}
 
 function LootAlert:ADDON_LOADED(arg1)
     if arg1 == "LootAlert" and (MikSBT or SCT_Display or SCT) then
-        self.counts = {}
-        self.loots = {}
-        sebags:RegisterEvent(self, "SPECIAL_BAGSLOT_UPDATE")
         this:RegisterEvent("CHAT_MSG_LOOT")
-        for bag = 0, NUM_BAG_FRAMES do
-            for slot = 1, sebags:GetNumSlots(bag) do
-                local item = GetContainerItemLink(bag, slot)
-                if item then
-                    local _, count = GetContainerItemInfo(bag, slot)
-                    item = getitemid(item)
-                    self.counts[item] = (self.counts[item] or 0) + count
-                end
-            end
-        end
+        this:UnregisterEvent("ADDON_LOADED")
     end
 end
 
@@ -46,29 +32,9 @@ function LootAlert:CHAT_MSG_LOOT(msg)
     end
 
     if item then
-        if not self.loots[item] then
-            self.loots[item] = 0
-        end
-        self.loots[item] = self.loots[item] + tonumber(count)
-    end
-end
-
-function LootAlert:SPECIAL_BAGSLOT_UPDATE(bag, slot, itemlink, stack, oldlink, oldstack)
-    local itemid = getitemid(itemlink)
-    local oldid = getitemid(oldlink)
-
-    if stack then
-        self.counts[itemid] = (self.counts[itemid] or 0) + stack
-    end
-    if oldstack then
-        self.counts[oldid] = (self.counts[oldid] or 0) - oldstack
-    end
-
-
-    local count = self.loots[itemid]
-    if count then
-        local name, _, rarity = GetItemInfo(itemid)
-        local message = "[Loot " .. name .. " +" .. count .. "(" .. self.counts[itemid] .. ")]"
+        local oldtotal = GetItemCount(item)
+        local name, _, rarity = GetItemInfo(item)
+        local message = "[Loot " .. name .. " +" .. count .. "(" .. oldtotal + count .. ")]"
         local color = ITEM_QUALITY_COLORS[rarity]
 
         if MikSBT then
@@ -82,12 +48,12 @@ function LootAlert:SPECIAL_BAGSLOT_UPDATE(bag, slot, itemlink, stack, oldlink, o
         elseif CombatText_AddMessage then
             CombatText_AddMessage(message, COMBAT_TEXT_SCROLL_FUNCTION, color.r, color.g, color.b, "sticky", nil)
         end
-
-        self.loots[itemid] = nil
     end
 end
 
 -- Initialization
 LootAlert.frame = CreateFrame("Frame", nil, UIParent)
-LootAlert.frame:SetScript("OnEvent", function() LootAlert[event](LootAlert, arg1) end)
+LootAlert.frame:SetScript("OnEvent", function(self, event, ...)
+    LootAlert[event](LootAlert, ...)
+end)
 LootAlert.frame:RegisterEvent("ADDON_LOADED")

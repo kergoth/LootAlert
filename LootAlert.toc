@@ -5,9 +5,8 @@
 ## Author: Kergoth
 ## DefaultState: Enabled
 ## LoadOnDemand: 0
-## OptionalDeps: SpecialEventsEmbed, MikScrollingBattleText, sct
+## OptionalDeps: MikScrollingBattleText, sct
 ## X-Category: Interface
 ## X-eMail: clarson@kergoth.com
 
-libs\SEEmbedBags\SEEmbedBags.lua
 core.lua
