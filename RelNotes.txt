@@ -1,3 +1,6 @@
+9:
+* Don't strip off the suffixes/enchants/etc of items that have them.
+
 8:
 * Add option to modify the loot chat messages to also have LootAlert's
   formatting.
