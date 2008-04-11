@@ -14,3 +14,6 @@ embeds.xml
 Libs\tekKonfigAboutPanel.lua
 locale\enUS.lua
 addon.lua
+options.lua
+scanning.lua
+chat.lua
