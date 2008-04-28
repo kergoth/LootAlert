@@ -1,6 +1,6 @@
 ﻿--[[
 Name: Sink-2.0
-Revision: $Rev: 66757 $
+Revision: $Rev: 71376 $
 Author(s): Rabbit (rabbit.magtheridon@gmail.com), Antiarc (cheal@gmail.com)
 Website: http://rabbit.nihilum.eu
 Documentation: http://wiki.wowace.com/index.php/Sink-2.0
@@ -32,7 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 -- Sink-2.0
 
 local SINK20 = "LibSink-2.0"
-local SINK20_MINOR = string.match("$Revision: 66757 $", "[0-9]+")
+local SINK20_MINOR = string.match("$Revision: 71376 $", "[0-9]+")
 
 local sink = LibStub:NewLibrary(SINK20, SINK20_MINOR)
 if not sink then return end
@@ -49,6 +49,7 @@ sink.stickyAddons = sink.stickyAddons or {
 	MikSBT = true,
 	SCT = true,
 	Parrot = true,
+	BCF = true,
 }
 
 -- Upgrade complete
@@ -217,22 +218,26 @@ local function sct(addon, text, r, g, b, font, size, outline, sticky)
 end
 
 local msbt_outlines = {["NORMAL"] = 1, ["OUTLINE"] = 2, ["THICKOUTLINE"] = 3}
-local function msbt(addon, text, r, g, b, font, size, outline, sticky)
+local function msbt(addon, text, r, g, b, font, size, outline, sticky, _, icon)
 	if font and SML and not sink.msbt_registered_fonts[font] then
 		MikSBT.RegisterFont(font, SML:Fetch("font", font))
 		sink.msbt_registered_fonts[font] = true
 	end
 	local location = sink.storageForAddon[addon] and sink.storageForAddon[addon].sink20ScrollArea or MikSBT.DISPLAYTYPE_NOTIFICATION
 	local s = getSticky(addon) or sticky
-	MikSBT.DisplayMessage(text, location, s, r * 255, g * 255, b * 255, size, font, msbt_outlines[outline])
+	MikSBT.DisplayMessage(text, location, s, r * 255, g * 255, b * 255, size, font, msbt_outlines[outline], icon)
 end
 
-local function bcf(addon, text, r, g, b, font, size, outline, sticky)
-	local loc = sink.storageForAddon[addon] and sink.storageForAddon[addon].sink20ScrollArea or "BCF_Message_Knob"
-	BCF_DisplayMessage({text = text, rgb = {r = r, g = g, b = b}, font = font, fontsize = size, paneltype = "standard", outline = outline, anchor = loc})
+local bcf_outlines = {["NORMAL"] = "", ["OUTLINE"] = "OUTLINE", ["THICKOUTLINE"] = "THICKOUTLINE"}
+local function bcf(addon, text, r, g, b, font, size, outline, sticky, _, icon)
+	if icon then text = "|T"..icon..":20:20:-5|t"..text end
+	local loc = sink.storageForAddon[addon] and sink.storageForAddon[addon].sink20ScrollArea or "Sticky"
+	local s = getSticky(addon) or sticky
+	BlinkCombatFeedback:DisplayCustomEvent({display = {msg = text, color = ("%02x%02x%02x"):format(r * 255, g * 255, b * 255), scrollArea = loc, scrollType = s and "Sticky" or "up", size = size, outling = bcf_outlines[outline], align = "center", font = font}})
 end
 
-local function blizzard(addon, text, r, g, b, font, size, outline, sticky)
+local function blizzard(addon, text, r, g, b, font, size, outline, sticky, _, icon)
+	if icon then text = "|T"..icon..":17:17:-5|t"..text end
 	if tostring(SHOW_COMBAT_TEXT) ~= "0" then
 		local s = getSticky(addon) or sticky
 		CombatText_AddMessage(text, CombatText_StandardScroll, r, g, b, s and "crit" or nil, false)
@@ -241,28 +246,25 @@ local function blizzard(addon, text, r, g, b, font, size, outline, sticky)
 	end
 end
 
-local function chat(addon, text, r, g, b)
+local function chat(addon, text, r, g, b, _, _, _, _, _, icon)
+	if icon then text = "|T"..icon..":15|t"..text end
 	DEFAULT_CHAT_FRAME:AddMessage(text, r, g, b)
 end
 
-local function uierror(addon, text, r, g, b)
+local function uierror(addon, text, r, g, b, _, _, _, _, _, icon)
+	if icon then text = "|T"..icon..":17:17:-5|t"..text end
 	UIErrorsFrame:AddMessage(text, r, g, b, 1, UIERRORS_HOLD_TIME)
 end
 
--- XXX: 2.3.0 compat
 local rw
-if type(RaidNotice_AddMessage) == "function" then
+do
 	local c = {}
 	function rw(addon, text, r, g, b, _, _, _, _, _, icon)
 		if not c[r] then c[r] = {} end
 		if not c[r][g] then c[r][g] = {} end
 		if not c[r][g][b] then c[r][g][b] = {r = r, g = g, b = b} end
-		if icon then text = "|T"..icon..":27:27:-10:-10|t"..text end
+		if icon then text = "|T"..icon..":17:17:-5|t"..text end
 		RaidNotice_AddMessage(RaidWarningFrame, text, c[r][g][b])
-	end
-else
-	function rw(addon, text, r, g, b)
-		RaidWarningFrame:AddMessage(text, r, g, b, 1, UIERRORS_HOLD_TIME)
 	end
 end
 
@@ -278,7 +280,7 @@ local customHandlersEnabled = {
 		return _G.SCT and _G.SCT:IsEnabled()
 	end,
 	BCF = function()
-		return _G.BlinkCombatFeedbackFrame and BlinkCombatFeed_Data["ENABLE"]
+		return bcfDB and bcfDB["enable"]
 	end,
 }
 
@@ -353,7 +355,7 @@ do
 		return not _G.MikSBT
 	end
 	local function shouldDisableBCF()
-		return not _G.BlinkCombatFeedbackFrame
+		return not ( bcfDB and bcfDB["enable"] )
 	end
 	local function shouldDisableParrot()
 		return not _G.Parrot
@@ -362,8 +364,6 @@ do
 		return not SHOW_COMBAT_TEXT or tostring(SHOW_COMBAT_TEXT) == "0"
 	end
 	
-	local bcfGeneral = {"BCF_Message_Knob", "BCFG_Message_Knob"}
-	local bcfNoGeneral = {"BCF_Message_Knob"}
 	local sctFrames = {"Incoming", "Outgoing", "Messages"}
 	local msbtFrames = nil
 	local function getScrollAreasForAddon(addon)
@@ -387,7 +387,13 @@ do
 				return MikSBT.GetScrollAreaList()
 			end
 		elseif addon == "BCF" then
-			return _G.BlinkCombatFeedback_General and bcfGeneral or bcfNoGeneral
+			if bcfDB then
+				local bcfAreas = { }
+				for i = 1, #bcfDB["scrollAreas"] do
+					table.insert(bcfAreas, bcfDB["scrollAreas"][i]["name"])
+				end
+				return bcfAreas
+			end
 		elseif addon == "SCT" then
 			return sctFrames
 		elseif sink.registeredScrollAreaFunctions[addon] then

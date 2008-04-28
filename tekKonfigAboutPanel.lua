@@ -1,11 +1,11 @@
 
-local lib, oldminor = LibStub:NewLibrary("tekKonfig-AboutPanel", 3)
+local lib, oldminor = LibStub:NewLibrary("tekKonfig-AboutPanel", 1)
 if not lib then return end
 
 
 function lib.new(parent, addonname)
 	local frame = CreateFrame("Frame", nil, UIParent)
-	frame.name, frame.parent, frame.addonname = not parent and addonname or "About", parent, addonname
+	frame.name, frame.parent, frame.addonname = "About", parent, addonname
 	frame:Hide()
 	frame:SetScript("OnShow", lib.OnShow)
 	InterfaceOptions_AddCategory(frame)
@@ -69,12 +69,12 @@ function lib.OnShow(frame)
 
 	local title = frame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
 	title:SetPoint("TOPLEFT", 16, -16)
-	title:SetText(frame.parent and (frame.parent.." - About") or frame.name)
+	title:SetText(frame.parent.." - About")
 
 	local subtitle = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
 	subtitle:SetHeight(32)
 	subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
-	subtitle:SetPoint("RIGHT", frame, -32, 0)
+	subtitle:SetPoint("RIGHT", parent, -32, 0)
 	subtitle:SetNonSpaceWrap(true)
 	subtitle:SetJustifyH("LEFT")
 	subtitle:SetJustifyV("TOP")
@@ -109,4 +109,24 @@ function lib.OnShow(frame)
 			anchor = title
 		end
 	end
+
+	frame:SetScript("OnShow", lib.FadeIn)
+	lib.FadeIn(frame)
+end
+
+
+local elapsed = 0
+local starttimes, endtimes = {}, {}
+local function OnUpdate(frame, elap)
+	elapsed = elapsed + elap
+	if elapsed > 0.5 then
+		frame:SetScript("OnUpdate", nil)
+		frame:SetAlpha(1)
+	else frame:SetAlpha(elapsed/0.5) end
+end
+
+function lib.FadeIn(frame)
+	elapsed = 0
+	frame:SetAlpha(0)
+	frame:SetScript("OnUpdate", OnUpdate)
 end
