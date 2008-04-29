@@ -11,5 +11,6 @@
 ## SavedVariables: LootAlertConfig
 
 embeds.xml
+Libs\tekKonfigAboutPanel.lua
 locale\enUS.lua
 addon.lua
