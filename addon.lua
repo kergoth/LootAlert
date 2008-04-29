@@ -1,23 +1,20 @@
--- LootAlert is a simple addon that displays what items you've looted, how
--- many, and what the total number of that item is in your inventory. It
--- colors the item name in the message by item quality, and displays looted
--- gold (colored by gold/silver/copper). It supports showing an icon for sct &
--- msbt. It can output to sct, msbt, blizzard fct, or the UIErrorsFrame.
-
--- Locals {{{1
 local iconpath = "Interface\\AddOns\\LootAlert\\Icons"
 local match, format, gsub, sub = string.match, string.format, string.gsub, string.sub
 local db
--- }}}1
 
--- Initialization {{{1
-LootAlert = LibStub("AceAddon-3.0"):NewAddon("LootAlert", "AceEvent-3.0", "AceConsole-3.0", "LibSink-2.0")
+-- Addon Object
+local mod = LibStub("AceAddon-3.0"):NewAddon("LootAlert", "AceEvent-3.0", "AceConsole-3.0", "AceHook-3.0", "LibSink-2.0")
 local L = LibStub("AceLocale-3.0"):GetLocale("LootAlert")
 local acedb = LibStub("AceDB-3.0")
 local reg = LibStub("AceConfigRegistry-3.0")
 local dialog = LibStub("AceConfigDialog-3.0")
 
+-- State
+local lootchatcount, lootprocessed = 0, 0
+local itemcounts, diff, pending, initialized = {}, {}, {}, {}
 local goldpat, silverpat, copperpat, moneysep
+
+-- Options
 local defaults = {
     profile = {
         enabled = true,
@@ -44,7 +41,7 @@ local defaults = {
 local function getOptions()
     local updateExamples
     local options = {
-        handler = LootAlert,
+        handler = mod,
         name = "LootAlert",
         type = "group",
         get = function(info)
@@ -66,9 +63,9 @@ local function getOptions()
                 set = function(info, v)
                     db.enabled = v
                     if v then
-                        LootAlert:Enable()
+                        mod:Enable()
                     else
-                        LootAlert:Disable()
+                        mod:Disable()
                     end
                 end,
             },
@@ -80,7 +77,7 @@ local function getOptions()
                 arg = "chat",
                 set = function(info, v)
                     db[info.arg] = v
-                    LootAlert:EnableChatFilter(v)
+                    mod:EnableChatFilter(v)
                 end,
             },
             examples = {
@@ -146,7 +143,7 @@ local function getOptions()
                         },
                         set = function(info, v)
                             db.moneyformat = v
-                            LootAlert:SetupMoneyPatterns()
+                            mod:SetupMoneyPatterns()
                             updateExamples()
                         end,
                     },
@@ -156,7 +153,7 @@ local function getOptions()
     }
 
     local function setupExample(exnum, itemid, itemname, count, oldtotal, quality, tex)
-        local msg = LootAlert:GetItemMessage("|Hitem:"..itemid..":0:0:0:0:0:0:0|h", count, itemname, oldtotal, quality, tex)
+        local msg = mod:GetItemMessage("|Hitem:"..itemid..":0:0:0:0:0:0:0|h", count, true, itemname, oldtotal, quality, tex)
         if msg then
             options.args.examples.args["ex"..exnum] = {
                 type = "description",
@@ -174,7 +171,7 @@ local function getOptions()
         options.args.examples.args.ex3 = {
             type = "description",
             order = 3,
-            name = LootAlert:GetMoneyMessage(5, 1, 24)
+            name = mod:GetMoneyMessage(5, 1, 24)
         }
         if not dontnotify then
             reg:NotifyChange("LootAlert")
@@ -195,7 +192,37 @@ local function getOptions()
     return options
 end
 
-function LootAlert:SetupMoneyPatterns()
+-- Pause/Unpause, to ensure that situations where we can gain items in the
+-- inventory from something other than a loot are handled (trade, bank, etc).
+local paused = 0
+local function ispaused()
+    return paused > 0
+end
+local function pause()
+    paused = paused + 1
+end
+local function unpause()
+    local waspaused = ispaused()
+    paused = paused - 1
+    if waspaused and not ispaused() then
+        mod:ScanAllBags(true)
+    end
+end
+
+-- Initialization
+local function processMoney(s)
+    return false, mod:ProcessMoneyEvent(s)
+end
+local function processItems(s)
+    return false, mod:ProcessItemEvents(s)
+end
+function mod:EnableChatFilter(val)
+    local func = val and ChatFrame_AddMessageEventFilter or ChatFrame_RemoveMessageEventFilter
+    func("CHAT_MSG_MONEY", processMoney)
+    func("CHAT_MSG_LOOT", processItems)
+end
+
+function mod:SetupMoneyPatterns()
     if db.moneyformat == 3 then
         goldpat = "%s|T"..iconpath.."\\UI-GoldIcon::|t"
         silverpat = "%s|T"..iconpath.."\\UI-SilverIcon::|t"
@@ -214,19 +241,7 @@ function LootAlert:SetupMoneyPatterns()
     end
 end
 
-local function processMoney(s)
-    return false, LootAlert:ProcessMoneyEvent(s)
-end
-local function processItems(s)
-    return false, LootAlert:ProcessItemEvents(s)
-end
-function LootAlert:EnableChatFilter(val)
-    local func = val and ChatFrame_AddMessageEventFilter or ChatFrame_RemoveMessageEventFilter
-    func("CHAT_MSG_MONEY", processMoney)
-    func("CHAT_MSG_LOOT", processItems)
-end
-
-function LootAlert:OnInitialize()
+function mod:OnInitialize()
     self.db = acedb:New("LootAlertConfig", defaults, "Default")
     db = self.db.profile
     self:SetEnabledState(db.enabled)
@@ -246,20 +261,183 @@ function LootAlert:OnInitialize()
     self:RegisterChatCommand("la", function() InterfaceOptionsFrame_OpenToFrame(dialog.BlizOptions["LootAlert"].frame) end)
 end
 
-function LootAlert:OnEnable()
-    self:RegisterEvent('CHAT_MSG_LOOT')
-    self:RegisterEvent('CHAT_MSG_MONEY')
-end
--- }}}1
+function mod:OnEnable()
+    self:RegisterEvent("BANKFRAME_SHOW", pause)
+    self:RegisterEvent("BANKFRAME_CLOSED", unpause)
+    self:RegisterEvent("MERCHANT_SHOW", pause)
+    self:RegisterEvent("MERCHANT_CLOSED", unpause)
+    self:RegisterEvent("TRADE_SHOW", pause)
+    self:RegisterEvent("TRADE_CLOSED", unpause)
 
--- Message Formatting {{{1
-function LootAlert:GetMoneyMessage(gold, silver, copper)
-    local moneystr = strjoin(moneysep, (gold and format(goldpat, gold) or ''),
-    (silver and format(silverpat, silver) or ''),
-    (copper and format(copperpat, copper) or ''))
+    self:RegisterEvent("UNIT_INVENTORY_CHANGED", "InventoryChanged")
+    self:RegisterEvent("PLAYER_LEAVING_WORLD", "PLW")
+    self:RegisterEvent("BAG_UPDATE", "BagUpdate")
+    self:RegisterEvent("CHAT_MSG_LOOT", "Loot")
+    self:RegisterEvent("CHAT_MSG_MONEY", "Money")
+
+    self:InventoryChanged(nil, "player")
+    self:ScanBags(0)
+
+    self:Hook("ChatFrame_AddMessageGroup", true)
+    self:Hook("ChatFrame_RemoveMessageGroup", true)
+    self:SecureHook("SetChatWindowShown", "UpdateLootChatCount")
+    self:UpdateLootChatCount()
+end
+
+-- Keep track of how many chat frames are showing loot info
+function mod:UpdateLootChatCount()
+    lootchatcount = 0
+    for i=1,FCF_GetNumActiveChatFrames() do
+        local f = _G["ChatFrame"..i]
+        local found
+        for k,v in pairs(f.messageTypeList) do
+            if strupper(v) == "LOOT" then
+                found = true
+            end
+        end
+        if found then
+            lootchatcount = lootchatcount + 1
+        end
+    end
+end
+
+function mod:ChatFrame_AddMessageGroup(frame, group)
+    if group == "LOOT" then
+        local wasregistered
+        for k,v in pairs(frame.messageTypeList) do
+            if strupper(v) == group then
+                wasregistered = true
+            end
+        end
+        if not wasregistered then
+            lootchatcount = lootchatcount + 1
+        end
+    end
+    self.hooks.ChatFrame_AddMessageGroup(frame, group)
+end
+
+function mod:ChatFrame_RemoveMessageGroup(frame, group)
+    if group == "LOOT" then
+        local wasregistered
+        for k,v in pairs(frame.messageTypeList) do
+            if strupper(v) == group then
+                wasregistered = true
+            end
+        end
+        if wasregistered then
+            lootchatcount = lootchatcount - 1
+        end
+    end
+    self.hooks.ChatFrame_RemoveMessageGroup(frame, group)
+end
+
+-- Track equipped stuff
+local slots = {
+    ["HeadSlot"] = true,
+    ["NeckSlot"] = true,
+    ["ShoulderSlot"] = true,
+    ["BackSlot"] = true,
+    ["ChestSlot"] = true,
+    ["ShirtSlot"] = true,
+    ["TabardSlot"] = true,
+    ["WristSlot"] = true,
+    ["HandsSlot"] = true,
+    ["WaistSlot"] = true,
+    ["LegsSlot"] = true,
+    ["FeetSlot"] = true,
+    ["Finger0Slot"] = true,
+    ["Finger1Slot"] = true,
+    ["Trinket0Slot"] = true,
+    ["Trinket1Slot"] = true,
+    ["MainHandSlot"] = true,
+    ["SecondaryHandSlot"] = true,
+    ["RangedSlot"] = true,
+    ["Bag0Slot"] = true,
+    ["Bag1Slot"] = true,
+    ["Bag2Slot"] = true,
+    ["Bag3Slot"] = true,
+}
+for slotname in pairs(slots) do
+    slots[slotname] = GetInventorySlotInfo(slotname)
+end
+local inventoryitems = {}
+function mod:ScanInventory()
+    for slotname,slotid in pairs(slots) do
+        local olditemstr = inventoryitems[slotid]
+        local link = GetInventoryItemLink("player", slotid)
+        if link then
+            local itemstr = match(link, "(item:%d+:%d+:%d+:%d+:%d+:%d+)")
+            itemcounts[itemstr] = (itemcounts[itemstr] or 0) + 1
+            inventoryitems[slotid] = itemstr
+        else
+            inventoryitems[slotid] = nil
+        end
+        if olditemstr then
+            itemcounts[olditemstr] = (itemcounts[olditemstr] or 0) - 1
+        end
+    end
+end
+
+-- Bag Scanning
+function mod:ScanAllBags(fresh)
+	for bag = 0, 4 do
+        self:ScanBags(bag, fresh)
+    end
+end
+
+local GetContainerNumSlots, GetContainerItemLink = GetContainerNumSlots, GetContainerItemLink
+local GetContainerItemInfo = GetContainerItemInfo
+function mod:ScanBags(bagnum, fresh)
+    if ispaused() or bagnum < 0 or bagnum > 4 then
+        return
+    end
+
+	for bag = 0, 4, 1 do
+		for slot = 1, GetContainerNumSlots(bag), 1 do
+            local link = GetContainerItemLink(bag, slot)
+            if link then
+                local itemstr = match(link, "(item:%d+:%d+:%d+:%d+:%d+:%d+)")
+                local _, count = GetContainerItemInfo(bag, slot)
+                local current = diff[itemstr] or 0
+                diff[itemstr] = current + count
+            end
+        end
+    end
+
+    for item, count in pairs(itemcounts) do
+        local newcount = diff[item]
+        local diffcount
+        if newcount ~= count then
+            diffcount = (newcount or 0) - count
+        end
+        diff[item] = diffcount
+    end
+
+    for item, count in pairs(diff) do
+        if count > 0 and not fresh and initialized[bagnum] then
+            local pendingcount = (pending[item] or 0) - count
+            pending[item] = pendingcount
+        end
+
+        itemcounts[item] = (itemcounts[item] or 0) + count
+        diff[item] = nil
+    end
+    initialized[bagnum] = true
+end
+
+-- Message Formatting
+function mod:GetMoneyMessage(gold, silver, copper)
+    local moneystr = strjoin(moneysep, (gold and format(goldpat, gold) or ""),
+    (silver and format(silverpat, silver) or ""),
+    (copper and format(copperpat, copper) or ""))
     return format("|cff%02x%02x%02x%s|r%s|r", db.color.r, db.color.g, db.color.b, db.prefix, moneystr)
 end
-function LootAlert:ProcessMoneyEvent(message)
+local solo = gsub(YOU_LOOT_MONEY, "%%s", "(.*)")
+local grouped = gsub(LOOT_MONEY_SPLIT, "%%s", "(.*)")
+local goldmatch = format("(%%d+) %s", GOLD)
+local silvermatch = format("(%%d+) %s", SILVER)
+local coppermatch = format("(%%d+) %s", COPPER)
+function mod:ProcessMoneyEvent(message)
     local moneys = match(message, solo) or match(message, grouped)
     if not moneys then
         return
@@ -275,13 +453,26 @@ local ITEM_QUALITY_COLORPATS = {}
 for k, v in pairs(ITEM_QUALITY_COLORS) do
     ITEM_QUALITY_COLORPATS[k] = format("|cff%02x%02x%02x", 255 * v.r, 255 * v.g, 255 * v.b)
 end
-function LootAlert:GetItemMessage(itemlink, count, name, total, quality, tex)
-    local itemstr = itemlink and match(itemlink, "(item:%d+:%d+:%d+:%d+:%d+:%d+:[-]?%d+:[-]?%d+)")
+function mod:GetItemMessage(itemlink, count, name, totalcount, quality, tex)
+    local itemstr = match(itemlink, "(item:%d+:%d+:%d+:%d+:%d+:%d+)")
     if itemstr then
-        local oldtotal = total or GetItemCount(itemlink)
         if not name then
             local _
             name, _, quality, _, _, _, _, _, _, tex = GetItemInfo(itemlink)
+
+            local pendingcount = pending[itemstr] or 0
+            if lootprocessed >= (lootchatcount + 1) then
+                lootprocessed = 0
+            end
+            if lootprocessed == 0 then
+                pendingcount = pendingcount + count
+                pending[itemstr] = pendingcount
+            end
+            lootprocessed = lootprocessed + 1
+            totalcount = GetItemCount(itemstr)
+            if pendingcount > 0 then
+                totalcount = totalcount + pendingcount
+            end
         end
         if quality < db.itemqualitythres then
             return
@@ -290,18 +481,20 @@ function LootAlert:GetItemMessage(itemlink, count, name, total, quality, tex)
         local color = db.itemqualitycolor and ITEM_QUALITY_COLORPATS[quality] or ""
         local countstr = ""
         local totalstr = ""
-        if tonumber(count) > 1 then
+        if count > 1 then
             countstr = " +"..count
         end
-        if oldtotal > 0 then
-            totalstr = " ("..oldtotal+count..")"
+        if totalcount > count then
+            totalstr = " ("..totalcount..")"
         end
 
         local r, g, b = db.color.r, db.color.g, db.color.b
         return format("|cff%02x%02x%02x%s%s|r|cff%02x%02x%02x%s%s|r", r, g, b, db.prefix, color..(db.itemicon and "|T"..tex.."::|t" or "").."|H"..itemstr.."|h"..name.."|h", r, g, b, countstr, totalstr)
     end
 end
-local linkpat = '|c........(|Hitem:%%d+:.-|h)|r'
+
+-- Item Loot Patterns
+local linkpat = "|c........(|Hitem:%%d+:.-|h)|r"
 local patterns = {}
 local itemglobals = {
     "LOOT_ITEM_SELF_MULTIPLE",
@@ -316,13 +509,12 @@ for _, global in ipairs(itemglobals) do
     table.insert(patterns, (gsub(gsub(pattern, "%%d", "(%%d+)"), "%%s", linkpat)))
 end
 local npatterns = #patterns
-local GetItemCount, GetItemInfo = GetItemCount, GetItemInfo
-function LootAlert:ProcessItemEvents(message)
+function mod:ProcessItemEvents(message)
     local item, count
     for i=1, npatterns do
         item, count = match(message, patterns[i])
         if item then
-            count = count or 1
+            count = tonumber(count) or 1
             break
         end
     end
@@ -331,35 +523,35 @@ function LootAlert:ProcessItemEvents(message)
         return self:GetItemMessage(item, count)
     end
 end
--- }}}1
 
--- Event Handlers {{{1
-local solo = gsub(YOU_LOOT_MONEY, '%%s', '(.*)')
-local grouped = gsub(LOOT_MONEY_SPLIT, '%%s', '(.*)')
-local goldmatch = format('(%%d+) %s', GOLD)
-local silvermatch = format('(%%d+) %s', SILVER)
-local coppermatch = format('(%%d+) %s', COPPER)
-function LootAlert:CHAT_MSG_MONEY(event, message)
-    self:Pour(self:ProcessMoneyEvent(message))
-end
-function LootAlert:ProcessMoneyEvent(message)
-    local moneys = match(message, solo) or match(message, grouped)
-    if not moneys then
-        return
+-- Event Handlers
+function mod:PLW()
+    -- Handle zoning, which fires a pile of BAG_UPDATEs, by making it ignore
+    -- the first update for each bag again.
+    for k,v in pairs(initialized) do
+        initialized[k] = nil
     end
-
-    local gold = match(moneys, goldmatch)
-    local silver = match(moneys, silvermatch)
-    local copper = match(moneys, coppermatch)
-    return self:GetMoneyMessage(gold, silver, copper)
 end
 
-function LootAlert:CHAT_MSG_LOOT(event, message)
+function mod:InventoryChanged(event, unit)
+    if unit == "player" then
+        self:ScanInventory()
+    end
+end
+
+function mod:BagUpdate(event, bagnum)
+    self:ScanBags(bagnum)
+end
+
+function mod:Loot(event, message)
     local out = self:ProcessItemEvents(message)
     if out then
         self:Pour(out)
     end
 end
--- }}}1
+
+function mod:Money(event, message)
+    self:Pour(self:ProcessMoneyEvent(message))
+end
 
 --  vim: set fenc=utf-8 sts=4 sw=4 et fdm=marker:
