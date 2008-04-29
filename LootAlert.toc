@@ -1,7 +1,7 @@
 ## Interface: 20400
 ## Title: Loot Alert
 ## Notes: Loot display in scrolling combat text addons (sct, fct, msbt).
-## Version: 7
+## Version: 10
 ## Author: Kergoth
 ## DefaultState: Enabled
 ## LoadOnDemand: 0
