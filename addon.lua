@@ -469,7 +469,7 @@ function mod:GetItemMessage(itemlink, count, name, totalcount, quality, tex)
                 pending[itemstr] = pendingcount
             end
             lootprocessed = lootprocessed + 1
-            totalcount = GetItemCount(itemstr)
+            totalcount = itemcounts[itemstr] or 0
             if pendingcount > 0 then
                 totalcount = totalcount + pendingcount
             end
