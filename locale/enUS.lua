@@ -5,7 +5,10 @@ if L then
     L["Modify chat messages"] = true
     L["Modify loot chat messages to use LootAlert's formatting."] = true
     L["Item Quality Threshold"] = true
+    L["Threshold"] = true
     L["Hide items looted with a lower quality than this."] = true
+    L["Apply to chat"] = true
+    L["Apply item quality threshold to chat"] = true
     L["Item Quality Coloring"] = true
     L["Color the item based on its quality, like an item link."] = true
     L["Item Icon"] = true

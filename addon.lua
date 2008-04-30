@@ -19,6 +19,7 @@ local defaults = {
     profile = {
         enabled = true,
         chat = true,
+        chatthres = false,
 
         color = {
             r = 255,
@@ -90,11 +91,26 @@ local function getOptions()
             },
             itemqualitythres = {
                 order = 20,
-                arg = "itemqualitythres",
+                type = "group",
+                inline = true,
                 name = L["Item Quality Threshold"],
-                desc = L["Hide items looted with a lower quality than this."],
-                type = "select",
-                values = {},
+                args = {
+                    threshold = {
+                        order = 0,
+                        arg = "itemqualitythres",
+                        name = L["Threshold"],
+                        desc = L["Hide items looted with a lower quality than this."],
+                        type = "select",
+                        values = {},
+                    },
+                    chatthres = {
+                        order = 10,
+                        name = L["Apply to chat"],
+                        desc = L["Apply item quality threshold to chat"],
+                        type = "toggle",
+                        arg = "chatthres",
+                    },
+                },
             },
             format = {
                 order = 30,
@@ -184,7 +200,7 @@ local function getOptions()
         if not desc then
             break
         end
-        options.args.itemqualitythres.values[i] = desc
+        options.args.itemqualitythres.args.threshold.values[i] = desc
         i = i + 1
     end
 
@@ -214,7 +230,12 @@ local function processMoney(s)
     return false, mod:ProcessMoneyEvent(s)
 end
 local function processItems(s)
-    return false, mod:ProcessItemEvents(s)
+    local out, quality = self:ProcessItemEvents(s)
+    if quality < db.itemqualitythres then
+        return true
+    else
+        return false, out
+    end
 end
 function mod:EnableChatFilter(val)
     local func = val and ChatFrame_AddMessageEventFilter or ChatFrame_RemoveMessageEventFilter
