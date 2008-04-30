@@ -474,9 +474,6 @@ function mod:GetItemMessage(itemlink, count, name, totalcount, quality, tex)
                 totalcount = totalcount + pendingcount
             end
         end
-        if quality < db.itemqualitythres then
-            return
-        end
 
         local color = db.itemqualitycolor and ITEM_QUALITY_COLORPATS[quality] or ""
         local countstr = ""
@@ -489,7 +486,7 @@ function mod:GetItemMessage(itemlink, count, name, totalcount, quality, tex)
         end
 
         local r, g, b = db.color.r, db.color.g, db.color.b
-        return format("|cff%02x%02x%02x%s%s|r|cff%02x%02x%02x%s%s|r", r, g, b, db.prefix, color..(db.itemicon and "|T"..tex.."::|t" or "").."|H"..itemstr.."|h"..name.."|h", r, g, b, countstr, totalstr)
+        return format("|cff%02x%02x%02x%s%s|r|cff%02x%02x%02x%s%s|r", r, g, b, db.prefix, color..(db.itemicon and "|T"..tex.."::|t" or "").."|H"..itemstr.."|h"..name.."|h", r, g, b, countstr, totalstr), quality
     end
 end
 
@@ -544,8 +541,8 @@ function mod:BagUpdate(event, bagnum)
 end
 
 function mod:Loot(event, message)
-    local out = self:ProcessItemEvents(message)
-    if out then
+    local out, quality = self:ProcessItemEvents(message)
+    if out and quality >= db.itemqualitythres then
         self:Pour(out)
     end
 end
