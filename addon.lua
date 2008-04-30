@@ -323,6 +323,7 @@ function mod:UpdateLootChatCount()
             lootchatcount = lootchatcount + 1
         end
     end
+    lootprocessed = 0
 end
 
 function mod:ChatFrame_AddMessageGroup(frame, group)
@@ -335,6 +336,7 @@ function mod:ChatFrame_AddMessageGroup(frame, group)
         end
         if not wasregistered then
             lootchatcount = lootchatcount + 1
+            lootprocessed = 0
         end
     end
     self.hooks.ChatFrame_AddMessageGroup(frame, group)
@@ -350,6 +352,7 @@ function mod:ChatFrame_RemoveMessageGroup(frame, group)
         end
         if wasregistered then
             lootchatcount = lootchatcount - 1
+            lootprocessed = 0
         end
     end
     self.hooks.ChatFrame_RemoveMessageGroup(frame, group)
