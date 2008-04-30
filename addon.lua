@@ -233,7 +233,7 @@ local function processMoney(s)
     return false, mod:ProcessMoneyEvent(s)
 end
 local function processItems(s)
-    local out, quality = self:ProcessItemEvents(s)
+    local out, quality = mod:ProcessItemEvents(s)
     if quality < db.itemqualitythres then
         return true
     else
