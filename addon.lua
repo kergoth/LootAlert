@@ -152,8 +152,8 @@ local function getOptions()
         },
     }
 
-    local function setupExample(exnum, itemid, itemname, count, oldtotal, quality, tex)
-        local msg = mod:GetItemMessage("|Hitem:"..itemid..":0:0:0:0:0:0:0|h", count, true, itemname, oldtotal, quality, tex)
+    local function setupExample(exnum, itemid, itemname, count, totalcount, quality, tex)
+        local msg = mod:GetItemMessage("|Hitem:"..itemid..":0:0:0:0:0:0:0|h", count, itemname, totalcount, quality, tex)
         if msg then
             options.args.examples.args["ex"..exnum] = {
                 type = "description",
@@ -166,8 +166,8 @@ local function getOptions()
     end
 
     function updateExamples(dontnotify)
-        setupExample(1, 27442, "Goldenscale Vendorfish", 2, 1, 0, "Interface\\Icons\\INV_Misc_Fish_42")
-        setupExample(2, 28108, "Power Infused Mushroom", 1, 0, 3, "Interface\\Icons\\INV_Mushroom_11")
+        setupExample(1, 27442, "Goldenscale Vendorfish", 2, 3, 0, "Interface\\Icons\\INV_Misc_Fish_42")
+        setupExample(2, 28108, "Power Infused Mushroom", 1, 1, 3, "Interface\\Icons\\INV_Mushroom_11")
         options.args.examples.args.ex3 = {
             type = "description",
             order = 3,
