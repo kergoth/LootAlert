@@ -105,10 +105,13 @@ local function getOptions()
                     },
                     chatthres = {
                         order = 10,
-                        name = L["Apply to chat"],
-                        desc = L["Apply item quality threshold to chat"],
+                        name = L["Apply to chat messages"],
+                        desc = L["Apply item quality threshold to chat messages"],
                         type = "toggle",
                         arg = "chatthres",
+                        disabled = function()
+                            return not db.chat
+                        end,
                     },
                 },
             },
