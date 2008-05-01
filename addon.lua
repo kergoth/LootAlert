@@ -539,15 +539,16 @@ function mod:GetItemMessage(itemlink, count, name, totalcount, quality, tex)
                     pending[itemstr] = pendingcount
                 end
                 lootprocessed = lootprocessed + 1
-                totalcount = itemcounts[itemstr] or 0
-                if pendingcount > 0 then
-                    totalcount = totalcount + pendingcount
-                end
+                totalcount = (itemcounts[itemstr] or 0) + pendingcount
 
-                local diff = math.abs(totalcount - (GetItemCount(itemstr) + count))
-                if diff > 0.2 then
-                    self:Print("Warning: Difference between new method and old method: "..diff)
-                end
+                -- For debugging the problems people are seeing with new
+                -- method.
+                -- if lootprocessed == 1 then
+                --     local diff = math.abs(totalcount - (GetItemCount(itemstr) + count))
+                --     if diff > 0.2 then
+                --         self:Print("Warning: Difference between new method and old method: "..diff)
+                --     end
+                -- end
             else
                 totalcount = GetItemCount(itemstr) + count
             end
