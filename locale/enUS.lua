@@ -28,4 +28,7 @@ if L then
 
     L["Output"] = true
     L["Loot: "] = true
+
+    L["New method"] = true
+    L["BETA: Use new method of tracking the item counts, to fix the occasional miscount bug."] = true
 end

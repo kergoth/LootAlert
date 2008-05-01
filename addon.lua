@@ -20,6 +20,7 @@ local defaults = {
         enabled = true,
         chat = true,
         chatthres = false,
+        newmethod = false,
 
         color = {
             r = 255,
@@ -68,6 +69,17 @@ local function getOptions()
                     else
                         mod:Disable()
                     end
+                end,
+            },
+            newmethod = {
+                order = 2,
+                name = L["New method"],
+                desc = L["BETA: Use new method of tracking the item counts, to fix the occasional miscount bug."],
+                type = "toggle",
+                arg = "newmethod",
+                set = function(info, v)
+                    db[info.arg] = v
+                    mod:EnableNewMethod(v)
                 end,
             },
             chat = {
@@ -290,26 +302,52 @@ function mod:OnInitialize()
 end
 
 function mod:OnEnable()
-    self:RegisterEvent("BANKFRAME_SHOW", pause)
-    self:RegisterEvent("BANKFRAME_CLOSED", unpause)
-    self:RegisterEvent("MERCHANT_SHOW", pause)
-    self:RegisterEvent("MERCHANT_CLOSED", unpause)
-    self:RegisterEvent("TRADE_SHOW", pause)
-    self:RegisterEvent("TRADE_CLOSED", unpause)
-
-    self:RegisterEvent("UNIT_INVENTORY_CHANGED", "InventoryChanged")
-    self:RegisterEvent("PLAYER_LEAVING_WORLD", "PLW")
-    self:RegisterEvent("BAG_UPDATE", "BagUpdate")
     self:RegisterEvent("CHAT_MSG_LOOT", "Loot")
     self:RegisterEvent("CHAT_MSG_MONEY", "Money")
 
-    self:InventoryChanged(nil, "player")
-    self:ScanBags(0)
+    self:EnableNewMethod(db.newmethod, true)
+end
 
-    self:Hook("ChatFrame_AddMessageGroup", true)
-    self:Hook("ChatFrame_RemoveMessageGroup", true)
-    self:SecureHook("SetChatWindowShown", "UpdateLootChatCount")
-    self:UpdateLootChatCount()
+function mod:EnableNewMethod(state, first)
+    if state then
+        self:RegisterEvent("BANKFRAME_SHOW", pause)
+        self:RegisterEvent("BANKFRAME_CLOSED", unpause)
+        self:RegisterEvent("MERCHANT_SHOW", pause)
+        self:RegisterEvent("MERCHANT_CLOSED", unpause)
+        self:RegisterEvent("TRADE_SHOW", pause)
+        self:RegisterEvent("TRADE_CLOSED", unpause)
+
+        self:RegisterEvent("UNIT_INVENTORY_CHANGED", "InventoryChanged")
+        self:RegisterEvent("PLAYER_LEAVING_WORLD", "PLW")
+        self:RegisterEvent("BAG_UPDATE", "BagUpdate")
+
+        if first then
+            self:ScanBags(0)
+        else
+            self:ScanAllBags(true)
+        end
+        self:InventoryChanged(nil, "player")
+
+        self:Hook("ChatFrame_AddMessageGroup", true)
+        self:Hook("ChatFrame_RemoveMessageGroup", true)
+        self:SecureHook("SetChatWindowShown", "UpdateLootChatCount")
+        self:UpdateLootChatCount()
+    elseif not first then
+        self:UnregisterEvent("BANKFRAME_SHOW")
+        self:UnregisterEvent("BANKFRAME_CLOSED")
+        self:UnregisterEvent("MERCHANT_SHOW")
+        self:UnregisterEvent("MERCHANT_CLOSED")
+        self:UnregisterEvent("TRADE_SHOW")
+        self:UnregisterEvent("TRADE_CLOSED")
+
+        self:UnregisterEvent("UNIT_INVENTORY_CHANGED")
+        self:UnregisterEvent("PLAYER_LEAVING_WORLD")
+        self:UnregisterEvent("BAG_UPDATE")
+
+        self:Unhook("ChatFrame_AddMessageGroup")
+        self:Unhook("ChatFrame_RemoveMessageGroup")
+        self:Unhook("SetChatWindowShown")
+    end
 end
 
 -- Keep track of how many chat frames are showing loot info
@@ -491,18 +529,27 @@ function mod:GetItemMessage(itemlink, count, name, totalcount, quality, tex)
             local _
             name, _, quality, _, _, _, _, _, _, tex = GetItemInfo(itemlink)
 
-            local pendingcount = pending[itemstr] or 0
-            if lootprocessed >= (lootchatcount + 1) then
-                lootprocessed = 0
-            end
-            if lootprocessed == 0 then
-                pendingcount = pendingcount + count
-                pending[itemstr] = pendingcount
-            end
-            lootprocessed = lootprocessed + 1
-            totalcount = itemcounts[itemstr] or 0
-            if pendingcount > 0 then
-                totalcount = totalcount + pendingcount
+            if db.newmethod then
+                local pendingcount = pending[itemstr] or 0
+                if lootprocessed >= (lootchatcount + 1) then
+                    lootprocessed = 0
+                end
+                if lootprocessed == 0 then
+                    pendingcount = pendingcount + count
+                    pending[itemstr] = pendingcount
+                end
+                lootprocessed = lootprocessed + 1
+                totalcount = itemcounts[itemstr] or 0
+                if pendingcount > 0 then
+                    totalcount = totalcount + pendingcount
+                end
+
+                local diff = math.abs(totalcount - (GetItemCount(itemstr) + count))
+                if diff > 0.2 then
+                    self:Print("Warning: Difference between new method and old method: "..diff)
+                end
+            else
+                totalcount = GetItemCount(itemstr) + count
             end
         end
 
