@@ -274,7 +274,11 @@ function mod:OnInitialize()
     self:EnableChatFilter(db.chat)
 
     reg:RegisterOptionsTable("LootAlert", getOptions)
-    reg:RegisterOptionsTable("LootAlert Output", function() return self:GetSinkAce3OptionsDataTable() end)
+    reg:RegisterOptionsTable("LootAlert Output", function()
+        local opts = self:GetSinkAce3OptionsDataTable()
+        opts.args.ChatFrame = nil
+        return opts
+    end)
     if dialog.AddToBlizOptions then
         dialog:AddToBlizOptions("LootAlert")
         dialog:AddToBlizOptions("LootAlert Output", L["Output"], "LootAlert")
