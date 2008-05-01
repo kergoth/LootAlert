@@ -312,8 +312,6 @@ function mod:EnableNewMethod(state, first)
     if state then
         self:RegisterEvent("BANKFRAME_SHOW", pause)
         self:RegisterEvent("BANKFRAME_CLOSED", unpause)
-        self:RegisterEvent("MERCHANT_SHOW", pause)
-        self:RegisterEvent("MERCHANT_CLOSED", unpause)
         self:RegisterEvent("TRADE_SHOW", pause)
         self:RegisterEvent("TRADE_CLOSED", unpause)
 
