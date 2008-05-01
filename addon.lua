@@ -234,7 +234,7 @@ local function processMoney(s)
 end
 local function processItems(s)
     local out, quality = mod:ProcessItemEvents(s)
-    if quality < db.itemqualitythres then
+    if db.chatthres and quality < db.itemqualitythres then
         return true
     else
         return false, out
