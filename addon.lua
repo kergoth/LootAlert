@@ -223,23 +223,6 @@ local function getOptions()
     return options
 end
 
--- Pause/Unpause, to ensure that situations where we can gain items in the
--- inventory from something other than a loot are handled (trade, bank, etc).
-local paused = 0
-local function ispaused()
-    return paused > 0
-end
-local function pause()
-    paused = paused + 1
-end
-local function unpause()
-    local waspaused = ispaused()
-    paused = paused - 1
-    if waspaused and not ispaused() then
-        mod:ScanAllBags(true)
-    end
-end
-
 -- Initialization
 local function processMoney(s)
     return false, mod:ProcessMoneyEvent(s)
@@ -308,12 +291,25 @@ function mod:OnEnable()
     self:EnableNewMethod(db.newmethod, true)
 end
 
+-- Pause/Unpause, to ensure that situations where we can gain items in the
+-- inventory from something other than a loot are handled (bank)
+local paused = 0
+local function ispaused()
+    return paused > 0
+end
+local function pause()
+    paused = paused + 1
+end
+local function unpause()
+    paused = paused - 1
+    if paused == 0 then
+        mod:ScanAllBags(true)
+    end
+end
 function mod:EnableNewMethod(state, first)
     if state then
         self:RegisterEvent("BANKFRAME_SHOW", pause)
         self:RegisterEvent("BANKFRAME_CLOSED", unpause)
-        self:RegisterEvent("TRADE_SHOW", pause)
-        self:RegisterEvent("TRADE_CLOSED", unpause)
 
         self:RegisterEvent("UNIT_INVENTORY_CHANGED", "InventoryChanged")
         self:RegisterEvent("PLAYER_LEAVING_WORLD", "PLW")
