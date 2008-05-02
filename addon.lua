@@ -284,11 +284,20 @@ function mod:OnInitialize()
     self:RegisterChatCommand("la", function() InterfaceOptionsFrame_OpenToFrame(dialog.BlizOptions["LootAlert"].frame) end)
 end
 
+mod.debugframe = DEFAULT_CHAT_FRAME
+function mod:Debug(...)
+    self.debugframe:AddMessage(strjoin(" ", ...))
+end
+
 function mod:OnEnable()
     self:RegisterEvent("CHAT_MSG_LOOT", "Loot")
     self:RegisterEvent("CHAT_MSG_MONEY", "Money")
 
     self:EnableNewMethod(db.newmethod, true)
+
+    if tekDebug then
+        self.debugframe = tekDebug:GetFrame("LootAlert")
+    end
 end
 
 -- Pause/Unpause, to ensure that situations where we can gain items in the
