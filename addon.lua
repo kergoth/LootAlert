@@ -184,8 +184,8 @@ local function getOptions()
     }
 
     local function setupExample(exnum, itemid, itemname, count, totalcount, quality, tex)
-        local msg = mod:GetItemMessage("|Hitem:"..itemid..":0:0:0:0:0:0:0|h", count, itemname, totalcount, quality, tex)
-        if msg then
+        local msg, quality = mod:GetItemMessage("|Hitem:"..itemid..":0:0:0:0:0:0:0|h", count, itemname, totalcount, quality, tex)
+        if msg and quality >= db.itemqualitythres then
             options.args.examples.args["ex"..exnum] = {
                 type = "description",
                 name = msg,
