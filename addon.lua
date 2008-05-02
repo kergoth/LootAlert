@@ -10,9 +10,9 @@ local reg = LibStub("AceConfigRegistry-3.0")
 local dialog = LibStub("AceConfigDialog-3.0")
 
 -- State
-local lootchatcount, lootprocessed = 0, 0
 local itemcounts, diff, pending, initialized = {}, {}, {}, {}
 local goldpat, silverpat, copperpat, moneysep
+local lootframes = {}
 
 -- Options
 local defaults = {
@@ -228,12 +228,7 @@ local function processMoney(s)
     return false, mod:ProcessMoneyEvent(s)
 end
 local function processItems(s)
-    local out, quality = mod:ProcessItemEvents(s)
-    if db.chatthres and quality < db.itemqualitythres then
-        return true
-    else
-        return false, out
-    end
+    return true
 end
 function mod:EnableChatFilter(val)
     local func = val and ChatFrame_AddMessageEventFilter or ChatFrame_RemoveMessageEventFilter
@@ -339,8 +334,8 @@ function mod:EnableNewMethod(state, first)
 
         self:Hook("ChatFrame_AddMessageGroup", true)
         self:Hook("ChatFrame_RemoveMessageGroup", true)
-        self:SecureHook("SetChatWindowShown", "UpdateLootChatCount")
-        self:UpdateLootChatCount()
+        self:SecureHook("SetChatWindowShown", "ScanChatFrames")
+        self:ScanChatFrames()
     elseif not first then
         self:UnregisterEvent("BANKFRAME_SHOW")
         self:UnregisterEvent("BANKFRAME_CLOSED")
@@ -359,9 +354,7 @@ function mod:EnableNewMethod(state, first)
     end
 end
 
--- Keep track of how many chat frames are showing loot info
-function mod:UpdateLootChatCount()
-    lootchatcount = 0
+function mod:ScanChatFrames()
     for i=1,FCF_GetNumActiveChatFrames() do
         local f = _G["ChatFrame"..i]
         local found
@@ -371,10 +364,11 @@ function mod:UpdateLootChatCount()
             end
         end
         if found then
-            lootchatcount = lootchatcount + 1
+            lootframes[f] = true
+        else
+            lootframes[f] = false
         end
     end
-    lootprocessed = 0
 end
 
 function mod:ChatFrame_AddMessageGroup(frame, group)
@@ -382,12 +376,8 @@ function mod:ChatFrame_AddMessageGroup(frame, group)
         local wasregistered
         for k,v in pairs(frame.messageTypeList) do
             if strupper(v) == group then
-                wasregistered = true
+                lootframes[frame] = true
             end
-        end
-        if not wasregistered then
-            lootchatcount = lootchatcount + 1
-            lootprocessed = 0
         end
     end
     self.hooks.ChatFrame_AddMessageGroup(frame, group)
@@ -398,12 +388,8 @@ function mod:ChatFrame_RemoveMessageGroup(frame, group)
         local wasregistered
         for k,v in pairs(frame.messageTypeList) do
             if strupper(v) == group then
-                wasregistered = true
+                lootframes[frame] = false
             end
-        end
-        if wasregistered then
-            lootchatcount = lootchatcount - 1
-            lootprocessed = 0
         end
     end
     self.hooks.ChatFrame_RemoveMessageGroup(frame, group)
@@ -470,8 +456,8 @@ function mod:ScanBags(bagnum, fresh)
         return
     end
 
-	for bag = 0, 4, 1 do
-		for slot = 1, GetContainerNumSlots(bag), 1 do
+    for bag = 0, 4, 1 do
+        for slot = 1, GetContainerNumSlots(bag), 1 do
             local link = GetContainerItemLink(bag, slot)
             if link then
                 local itemstr = match(link, "(item:%d+:%d+:%d+:%d+:%d+:%d+)")
@@ -540,24 +526,9 @@ function mod:GetItemMessage(itemlink, count, name, totalcount, quality, tex)
 
             if db.newmethod then
                 local pendingcount = pending[itemstr] or 0
-                if lootprocessed >= (lootchatcount + 1) then
-                    lootprocessed = 0
-                end
-                if lootprocessed == 0 then
-                    pendingcount = pendingcount + count
-                    pending[itemstr] = pendingcount
-                end
-                lootprocessed = lootprocessed + 1
+                pendingcount = pendingcount + count
+                pending[itemstr] = pendingcount
                 totalcount = (itemcounts[itemstr] or 0) + pendingcount
-
-                -- For debugging the problems people are seeing with new
-                -- method.
-                -- if lootprocessed == 1 then
-                --     local diff = math.abs(totalcount - (GetItemCount(itemstr) + count))
-                --     if diff > 0.2 then
-                --         self:Print("Warning: Difference between new method and old method: "..diff)
-                --     end
-                -- end
             else
                 totalcount = GetItemCount(itemstr) + count
             end
@@ -630,8 +601,15 @@ end
 
 function mod:Loot(event, message)
     local out, quality = self:ProcessItemEvents(message)
-    if out and quality >= db.itemqualitythres then
-        self:Pour(out)
+    if out then
+        if quality >= db.itemqualitythres then
+            self:Pour(out)
+        end
+        for frame, enabled in pairs(lootframes) do
+            if not db.chatthres or quality >= db.itemqualitythres then
+                frame:AddMessage(out)
+            end
+        end
     end
 end
 
