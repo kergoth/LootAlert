@@ -20,7 +20,7 @@ local defaults = {
         enabled = true,
         chat = true,
         chatthres = false,
-        newmethod = false,
+        newmethod = true,
 
         color = {
             r = 255,
