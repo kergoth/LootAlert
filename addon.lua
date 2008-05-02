@@ -285,19 +285,25 @@ function mod:OnInitialize()
 end
 
 mod.debugframe = DEFAULT_CHAT_FRAME
+local function _tostring(...)
+    if select('#', ...) == 0 then
+        return
+    end
+    return tostring((...)), _tostring(select(2, ...))
+end
 function mod:Debug(...)
-    self.debugframe:AddMessage(strjoin(" ", ...))
+    self.debugframe:AddMessage(strjoin(" ", _tostring(...)))
 end
 
 function mod:OnEnable()
+    if tekDebug then
+        self.debugframe = tekDebug:GetFrame("LootAlert")
+    end
+
     self:RegisterEvent("CHAT_MSG_LOOT", "Loot")
     self:RegisterEvent("CHAT_MSG_MONEY", "Money")
 
     self:EnableNewMethod(db.newmethod, true)
-
-    if tekDebug then
-        self.debugframe = tekDebug:GetFrame("LootAlert")
-    end
 end
 
 -- Pause/Unpause, to ensure that situations where we can gain items in the
