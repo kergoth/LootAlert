@@ -606,7 +606,7 @@ function mod:Loot(event, message)
             self:Pour(out)
         end
         for frame, enabled in pairs(lootframes) do
-            if not db.chatthres or quality >= db.itemqualitythres then
+            if enabled and (not db.chatthres or quality >= db.itemqualitythres) then
                 frame:AddMessage(out)
             end
         end
