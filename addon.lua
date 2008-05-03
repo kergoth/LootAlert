@@ -229,7 +229,7 @@ local function processMoney(s)
 end
 local function processItems(s)
     -- Filter out chat loot messages that we'll be handling ourselves
-    local item, count = mod:ParseChatMessage(message)
+    local item, count = mod:ParseChatMessage(s)
 
     if item then
         return true
