@@ -228,7 +228,13 @@ local function processMoney(s)
     return false, mod:ProcessMoneyEvent(s)
 end
 local function processItems(s)
-    return true
+    -- Filter out chat loot messages that we'll be handling ourselves
+    local item, count = mod:ParseChatMessage(message)
+
+    if item then
+        return true
+    end
+    return false, s
 end
 function mod:EnableChatFilter(val)
     local func = val and ChatFrame_AddMessageEventFilter or ChatFrame_RemoveMessageEventFilter
@@ -565,7 +571,7 @@ for _, global in ipairs(itemglobals) do
     table.insert(patterns, (gsub(gsub(pattern, "%%d", "(%%d+)"), "%%s", linkpat)))
 end
 local npatterns = #patterns
-function mod:ProcessItemEvents(message)
+function mod:ParseChatMessage(message)
     local item, count
     for i=1, npatterns do
         item, count = match(message, patterns[i])
@@ -574,6 +580,10 @@ function mod:ProcessItemEvents(message)
             break
         end
     end
+    return item, count
+end
+function mod:ProcessItemEvents(message)
+    local item, count = mod:ParseChatMessage(message)
 
     if item then
         return self:GetItemMessage(item, count)
@@ -605,9 +615,14 @@ function mod:Loot(event, message)
         if quality >= db.itemqualitythres then
             self:Pour(out)
         end
-        for frame, enabled in pairs(lootframes) do
-            if enabled and (not db.chatthres or quality >= db.itemqualitythres) then
-                frame:AddMessage(out)
+        if db.chat then
+            local qualitythres = not db.chatthres or quality >= db.itemqualitythres
+            if qualitythres then
+                for frame, enabled in pairs(lootframes) do
+                    if enabled then
+                        frame:AddMessage(out)
+                    end
+                end
             end
         end
     end
