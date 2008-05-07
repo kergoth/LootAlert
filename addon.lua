@@ -10,6 +10,7 @@ local reg = LibStub("AceConfigRegistry-3.0")
 local dialog = LibStub("AceConfigDialog-3.0")
 
 -- State
+local lootframes = {}
 local goldpat, silverpat, copperpat, moneysep
 mod.itemcounts = {}
 mod.pending = {}
@@ -92,8 +93,17 @@ function mod:EnableNewMethod(state, first)
 
         self:Hook("ChatFrame_AddMessageGroup", true)
         self:Hook("ChatFrame_RemoveMessageGroup", true)
-        self:SecureHook("SetChatWindowShown", "ScanChatFrames")
-        self:ScanChatFrames()
+
+        for i=1,FCF_GetNumActiveChatFrames() do
+            local f = _G["ChatFrame"..i]
+            local found
+            for k,v in pairs(f.messageTypeList) do
+                if strupper(v) == "LOOT" then
+                    found = true
+                end
+            end
+            lootframes[f] = found
+        end
     elseif not first then
         self:UnregisterEvent("BANKFRAME_SHOW")
         self:UnregisterEvent("BANKFRAME_CLOSED")
@@ -108,7 +118,6 @@ function mod:EnableNewMethod(state, first)
 
         self:Unhook("ChatFrame_AddMessageGroup")
         self:Unhook("ChatFrame_RemoveMessageGroup")
-        self:Unhook("SetChatWindowShown")
     end
 end
 
@@ -141,6 +150,40 @@ function mod:OnEnable()
     self:RegisterEvent("CHAT_MSG_MONEY", "Money")
 
     self:EnableNewMethod(db.newmethod, true)
+end
+
+
+-- Chat
+local function processMoney(s)
+    return false, mod:ProcessMoneyEvent(s)
+end
+local function processItems(s)
+    -- Filter out chat loot messages that we'll be handling ourselves
+    local item, count = mod:ParseChatMessage(s)
+
+    if item then
+        return true
+    end
+    return false, s
+end
+function mod:EnableChatFilter(val)
+    local func = val and ChatFrame_AddMessageEventFilter or ChatFrame_RemoveMessageEventFilter
+    func("CHAT_MSG_MONEY", processMoney)
+    func("CHAT_MSG_LOOT", processItems)
+end
+
+function mod:ChatFrame_AddMessageGroup(frame, group)
+    if group == "LOOT" then
+        lootframes[frame] = true
+    end
+    return self.hooks.ChatFrame_AddMessageGroup(frame, group)
+end
+
+function mod:ChatFrame_RemoveMessageGroup(frame, group)
+    if group == "LOOT" then
+        lootframes[frame] = nil
+    end
+    return self.hooks.ChatFrame_RemoveMessageGroup(frame, group)
 end
 
 
@@ -251,10 +294,8 @@ function mod:Loot(event, message)
         if db.chat then
             local qualitythres = not db.chatthres or quality >= db.itemqualitythres
             if qualitythres then
-                for frame, enabled in pairs(mod.lootframes) do
-                    if enabled then
-                        frame:AddMessage(out)
-                    end
+                for frame in pairs(lootframes) do
+                    frame:AddMessage(out)
                 end
             end
         end
