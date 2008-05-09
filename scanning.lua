@@ -35,7 +35,7 @@ function mod:ScanInventory()
         local olditemstr = inventoryitems[slotid]
         local link = GetInventoryItemLink("player", slotid)
         if link then
-            local itemstr = match(link, "(item:%d+:%d+:%d+:%d+:%d+:%d+)")
+            local itemstr = self:GetItemStr(link)
             self.itemcounts[itemstr] = (self.itemcounts[itemstr] or 0) + 1
             inventoryitems[slotid] = itemstr
         else
@@ -71,7 +71,7 @@ function mod:ScanBags(bagnum, fresh)
         for slot = 1, GetContainerNumSlots(bag), 1 do
             local link = GetContainerItemLink(bag, slot)
             if link then
-                local itemstr = match(link, "(item:%d+:%d+:%d+:%d+:%d+:%d+)")
+                local itemstr = self:GetItemStr(link)
                 local _, count = GetContainerItemInfo(bag, slot)
                 local current = diff[itemstr] or 0
                 diff[itemstr] = current + count

@@ -211,12 +211,25 @@ function mod:ProcessMoneyEvent(message)
     return self:GetMoneyMessage(gold, silver, copper)
 end
 
+local band = bit.band
+function mod:GetItemStr(itemlink)
+    local itempat = "(item:%d+:%d+:%d+:%d+:%d+:%d+:([-]?%d+)):([-]?%d+)"
+    local itemstr, suffixid, uniqueid = match(itemlink, itempat)
+    if (tonumber(suffixid) or 0) < 0 then
+        -- scaled random suffixes, see http://www.wowwiki.com/ItemString
+        uniqueid = band(tonumber(uniqueid) or 0, 65535)
+    else
+        uniqueid = 0
+    end
+    return itemstr..":"..uniqueid
+end
+
 local ITEM_QUALITY_COLORPATS = {}
 for k, v in pairs(ITEM_QUALITY_COLORS) do
     ITEM_QUALITY_COLORPATS[k] = format("|cff%02x%02x%02x", 255 * v.r, 255 * v.g, 255 * v.b)
 end
 function mod:GetItemMessage(itemlink, count, name, totalcount, quality, tex)
-    local itemstr = match(itemlink, "(item:%d+:%d+:%d+:%d+:%d+:%d+)")
+    local itemstr = self:GetItemStr(itemlink)
     if itemstr then
         if not name then
             local _
