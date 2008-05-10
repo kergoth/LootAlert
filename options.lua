@@ -1,3 +1,4 @@
+local L = LibStub("AceLocale-3.0"):GetLocale("LootAlert")
 local mod = LibStub("AceAddon-3.0"):GetAddon("LootAlert")
 local reg = LibStub("AceConfigRegistry-3.0")
 
