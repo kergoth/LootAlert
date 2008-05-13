@@ -196,9 +196,9 @@ function mod:GetMoneyMessage(gold, silver, copper)
 end
 local solo = gsub(YOU_LOOT_MONEY, "%%s", "(.*)")
 local grouped = gsub(LOOT_MONEY_SPLIT, "%%s", "(.*)")
-local goldmatch = format("(%%d+) %s", GOLD)
-local silvermatch = format("(%%d+) %s", SILVER)
-local coppermatch = format("(%%d+) %s", COPPER)
+local goldmatch = gsub(GOLD_AMOUNT, "%%d", "(%%d+)")
+local silvermatch = gsub(SILVER_AMOUNT, "%%d", "(%%d+)")
+local coppermatch = gsub(COPPER_AMOUNT, "%%d", "(%%d+)")
 function mod:ProcessMoneyEvent(message)
     local moneys = match(message, solo) or match(message, grouped)
     if not moneys then
