@@ -1,6 +1,6 @@
 ﻿--[[
 Name: Sink-2.0
-Revision: $Rev: 71376 $
+Revision: $Rev: 73848 $
 Author(s): Rabbit (rabbit.magtheridon@gmail.com), Antiarc (cheal@gmail.com)
 Website: http://rabbit.nihilum.eu
 Documentation: http://wiki.wowace.com/index.php/Sink-2.0
@@ -11,7 +11,7 @@ License: GPL v2 or later.
 ]]
 
 --[[
-Copyright (C) 2007 Rabbit
+Copyright (C) 2008 Rabbit
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -32,7 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 -- Sink-2.0
 
 local SINK20 = "LibSink-2.0"
-local SINK20_MINOR = string.match("$Revision: 71376 $", "[0-9]+")
+local SINK20_MINOR = string.match("$Revision: 73848 $", "[0-9]+")
 
 local sink = LibStub:NewLibrary(SINK20, SINK20_MINOR)
 if not sink then return end
@@ -42,7 +42,7 @@ sink.storageForAddon = sink.storageForAddon or {}
 sink.override = sink.override or {}
 sink.msbt_registered_fonts = sink.msbt_registered_fonts or {}
 sink.registeredScrollAreaFunctions = sink.registeredScrollAreaFunctions or {}
-sink.handlers = sink.handlers or nil
+sink.handlers = sink.handlers or {}
 
 sink.stickyAddons = sink.stickyAddons or {
 	Blizzard = true,
@@ -66,12 +66,13 @@ local L_CHAT = "Chat"
 local L_BLIZZARD = "Blizzard FCT"
 local L_RW = "Raid Warning"
 local L_PARROT = "Parrot"
+local L_CHANNEL = "Channel"
 local L_OUTPUT = "Output"
 local L_OUTPUT_DESC = "Where to route the output from this addon."
-local L_SCROLL = "Scroll area"
-local L_SCROLL_DESC = "Set the scrollarea where messages should appear.\n\nOnly available for Parrot, SCT or MikSBT."
+local L_SCROLL = "Sub section"
+local L_SCROLL_DESC = "Set the sub section where messages should appear.\n\nOnly available for some output sinks."
 local L_STICKY = "Sticky"
-local L_STICKY_DESC = "Set messages from this addon to appear as sticky.\n\nOnly available for Blizzard FCT, Parrot, SCT or MikSBT."
+local L_STICKY_DESC = "Set messages from this addon to appear as sticky.\n\nOnly available for some output sinks."
 local L_NONE = "None"
 local L_NONE_DESC = "Hide all messages from this addon."
 
@@ -105,19 +106,20 @@ elseif l == "frFR" then
 	L_MSBT = "MikSBT"
 	L_BIGWIGS = "BigWigs"
 	L_BCF = "BlinkCombatFeedback"
-	L_UIERROR = "Cadre des erreurs Blizzard"
+	L_UIERROR = "Cadre des erreurs"
 	L_CHAT = "Fenêtre de discussion"
 	L_BLIZZARD = "TCF de Blizzard"
 	L_RW = "Avertissement raid"
 	L_PARROT = "Parrot"
+	L_CHANNEL = "Canal"
 	L_OUTPUT = "Sortie"
 	L_OUTPUT_DESC = "Destination de la sortie de cet addon."
-	L_SCROLL = "Zone de défilement"
-	L_SCROLL_DESC = "Définie la zone de défilement où les messages doivent apparaitre."
+	L_SCROLL = "Sous-section"
+	L_SCROLL_DESC = "Définit la sous-section où les messages doivent apparaitre.\n\nDisponible uniquement dans certains cas."
 	L_STICKY = "En évidence"
-	L_STICKY_DESC = "Fait en sortie que les messages de cet addon apparaissent en évidence.\n\nDisponible uniquement pour le TCF de Blizzard, Parrot, SCT et MikSBT."
+	L_STICKY_DESC = "Fait en sortie que les messages de cet addon apparaissent en évidence.\n\nDisponible uniquement dans certains cas."
 	L_NONE = "Aucun"
-	L_NONE_DESC = "Masque tous les messages de cet addon."
+	L_NONE_DESC = "Masque tous les messages provenant de cet addon."
 elseif l == "deDE" then
 	L_DEFAULT = "Voreinstellung"
 	L_DEFAULT_DESC = "Leitet die Ausgabe von diesem Addon zum ersten verfügbaren Ausgabeort, vorzugsweise Scrollende Kampf Text Addons wenn verfügbar."
@@ -141,25 +143,26 @@ elseif l == "deDE" then
 	L_NONE_DESC = "Versteckt alle Meldungen von diesem Addon."
 elseif l == "zhCN" then
 	L_DEFAULT = "默认"
-	L_DEFAULT_DESC = "插件的输出方式取决于第一个可用插件.例如有SCT插件,则优先使用."
-	L_ROUTE = "经由%s显示信息"
+	L_DEFAULT_DESC = "插件的输出方式取决于第一个可用插件，例如有 SCT 插件，则优先使用。"
+	L_ROUTE = "经由%s显示信息。"
 	L_SCT = "SCT"
 	L_MSBT = "MikSBT"
 	L_BIGWIGS = "BigWigs"
 	L_BCF = "BlinkCombatFeedback"
-	--L_UIERROR = "Blizzard Error Frame"
-	L_CHAT = "聊天框架"
+	L_UIERROR = "Blizzard 错误框体"
+	L_CHAT = "聊天框体"
 	L_BLIZZARD = "系统自带滚动战斗信息"
 	L_RW = "团队警告"
 	L_PARROT = "Parrot"
+	L_CHANNEL = "频道"
 	L_OUTPUT = "输出模式"
-	L_OUTPUT_DESC = "设置显示位置"
+	L_OUTPUT_DESC = "设置显示位置。"
 	L_SCROLL = "滚动区域"
-	L_SCROLL_DESC = "设置滚动信息显示位置. \n\n只有Parrot, SCT及MikSBT支持"
+	L_SCROLL_DESC = "设置滚动信息显示位置。\n\n只有 Parrot、SCT 及 MikSBT 支持。"
 	L_STICKY = "固定"
-	L_STICKY_DESC = "设置信息固定显示位置.\n\n只有系统自带鼓动战斗信息, Parrot, SCT及MikSBT支持"
+	L_STICKY_DESC = "设置信息固定显示位置。\n\n只有系统自带滚动战斗信息、Parrot、SCT 及 MikSBT 支持。"
 	L_NONE = "隐藏"
-	L_NONE_DESC = "隐藏所有来自插件的信息. "
+	L_NONE_DESC = "隐藏所有来自插件的信息。"
 elseif l == "zhTW" then
 	L_DEFAULT = "預設"
 	L_DEFAULT_DESC = "插件輸出經由第一個可使用的處理器顯示，如果有 SCT 的話，則優先使用。"
@@ -228,7 +231,7 @@ local function msbt(addon, text, r, g, b, font, size, outline, sticky, _, icon)
 	MikSBT.DisplayMessage(text, location, s, r * 255, g * 255, b * 255, size, font, msbt_outlines[outline], icon)
 end
 
-local bcf_outlines = {["NORMAL"] = "", ["OUTLINE"] = "OUTLINE", ["THICKOUTLINE"] = "THICKOUTLINE"}
+local bcf_outlines = {NORMAL = "", OUTLINE = "OUTLINE", THICKOUTLINE = "THICKOUTLINE"}
 local function bcf(addon, text, r, g, b, font, size, outline, sticky, _, icon)
 	if icon then text = "|T"..icon..":20:20:-5|t"..text end
 	local loc = sink.storageForAddon[addon] and sink.storageForAddon[addon].sink20ScrollArea or "Sticky"
@@ -237,7 +240,7 @@ local function bcf(addon, text, r, g, b, font, size, outline, sticky, _, icon)
 end
 
 local function blizzard(addon, text, r, g, b, font, size, outline, sticky, _, icon)
-	if icon then text = "|T"..icon..":17:17:-5|t"..text end
+	if icon then text = "|T"..icon..":20:20:-5|t"..text end
 	if tostring(SHOW_COMBAT_TEXT) ~= "0" then
 		local s = getSticky(addon) or sticky
 		CombatText_AddMessage(text, CombatText_StandardScroll, r, g, b, s and "crit" or nil, false)
@@ -246,13 +249,31 @@ local function blizzard(addon, text, r, g, b, font, size, outline, sticky, _, ic
 	end
 end
 
+local channelMapping = {
+	[SAY] = "SAY",
+	[PARTY] = "PARTY",
+	[BATTLEGROUND] = "BATTLEGROUND",
+	[GUILD_CHAT] = "GUILD",
+	[OFFICER_CHAT] = "OFFICER",
+	[YELL] = "YELL",
+	[RAID] = "RAID",
+	[RAID_WARNING] = "RAID_WARNING",
+}
+
+local function channel(addon, text)
+	-- Sanitize the text, remove all color codes.
+	text = text:gsub("(|c%x%x%x%x%x%x%x%x)", ""):gsub("(|r)", "")
+	local loc = sink.storageForAddon[addon] and sink.storageForAddon[addon].sink20ScrollArea or SAY
+	SendChatMessage(text, channelMapping[loc] or SAY)
+end
+
 local function chat(addon, text, r, g, b, _, _, _, _, _, icon)
 	if icon then text = "|T"..icon..":15|t"..text end
 	DEFAULT_CHAT_FRAME:AddMessage(text, r, g, b)
 end
 
 local function uierror(addon, text, r, g, b, _, _, _, _, _, icon)
-	if icon then text = "|T"..icon..":17:17:-5|t"..text end
+	if icon then text = "|T"..icon..":20:20:-5|t"..text end
 	UIErrorsFrame:AddMessage(text, r, g, b, 1, UIERRORS_HOLD_TIME)
 end
 
@@ -263,7 +284,7 @@ do
 		if not c[r] then c[r] = {} end
 		if not c[r][g] then c[r][g] = {} end
 		if not c[r][g][b] then c[r][g][b] = {r = r, g = g, b = b} end
-		if icon then text = "|T"..icon..":17:17:-5|t"..text end
+		if icon then text = "|T"..icon..":20:20:-5|t"..text end
 		RaidNotice_AddMessage(RaidWarningFrame, text, c[r][g][b])
 	end
 end
@@ -284,8 +305,9 @@ local customHandlersEnabled = {
 	end,
 }
 
-local msbtVersion = tonumber(GetAddOnMetadata("MikScrollingBattleText", "Version")) or 0
-local isMSBTFive = math.floor(msbtVersion) == 5 and true or nil
+-- Default to version 5 or higher now
+local msbtVersion = tonumber(GetAddOnMetadata("MikScrollingBattleText", "Version")) or 5
+local isMSBTFive = math.floor(msbtVersion) > 4 and true or nil
 if isMSBTFive then
 	customHandlersEnabled.MikSBT = function()
 		return _G.MikSBT and not _G.MikSBT.IsModDisabled()
@@ -363,7 +385,8 @@ do
 	local function shouldDisableFCT()
 		return not SHOW_COMBAT_TEXT or tostring(SHOW_COMBAT_TEXT) == "0"
 	end
-	
+
+	local channelAreas = { SAY, YELL, PARTY, GUILD_CHAT, OFFICER_CHAT, RAID, RAID_WARNING, BATTLEGROUND }
 	local sctFrames = {"Incoming", "Outgoing", "Messages"}
 	local msbtFrames = nil
 	local function getScrollAreasForAddon(addon)
@@ -396,6 +419,8 @@ do
 			end
 		elseif addon == "SCT" then
 			return sctFrames
+		elseif addon == "Channel" then
+			return channelAreas
 		elseif sink.registeredScrollAreaFunctions[addon] then
 			return sink.registeredScrollAreaFunctions[addon]()
 		end
@@ -412,6 +437,7 @@ do
 		Blizzard = {L_BLIZZARD, nil, shouldDisableFCT},
 		RaidWarning = {L_RW},
 		ChatFrame = {L_CHAT},
+		Channel = {L_CHANNEL},
 		UIErrorsFrame = {L_UIERROR},
 		None = {L_NONE, L_NONE_DESC}
 	}
@@ -427,7 +453,7 @@ do
 		}
 	end
 	
-	function sink:GetSinkAce2OptionsDataTable(addon)
+	function sink.GetSinkAce2OptionsDataTable(addon)
 		options["Ace2"][addon] = options["Ace2"][addon] or {
 			output = {
 				type = "group",
@@ -643,33 +669,33 @@ end
 function sink.SetSinkStorage(addon, storage)
 	assert(type(addon) == "table")
 	assert(type(storage) == "table", "Storage must be a table")
-	--[[
-	sink:argCheck(addon, 2, "table")
-	sink:argCheck(storage, 3, "table")
-	]]--
 	sink.storageForAddon[addon] = storage
 end
 
 -- Sets a sink override for -all- addons, librarywide.
 function sink:SetSinkOverride(override)
 	assert(type(override) == "string" or override == nil)
-	-- sink:argCheck(override, 2, "string", "nil")
-	
-	if not sink.handlers[override] then
+	if override and not sink.handlers[override] then
 		sink:error("There's no %q sink.", override)
 	end
 	sink.override = override
 end
 
 -- Put this at the bottom, because we need the local functions to exist first.
-sink.handlers = sink.handlers or {
+local handlers = {
 	Parrot = parrot,
 	SCT = sct,
 	MikSBT = msbt,
 	BCF = bcf,
 	ChatFrame = chat,
+	Channel = channel,
 	UIErrorsFrame = uierror,
 	Blizzard = blizzard,
 	RaidWarning = rw,
 	None = noop,
 }
+-- Overwrite any handler functions from the old library
+for k, v in pairs(handlers) do
+	sink.handlers[k] = v
+end
+
