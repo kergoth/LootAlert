@@ -12,7 +12,8 @@
 
 embeds.xml
 Libs\tekKonfigAboutPanel.lua
-locale\enUS.lua
+Locale\enUS.lua
+Locale\deDE.lua
 addon.lua
 options.lua
 scanning.lua
