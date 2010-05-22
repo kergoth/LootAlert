@@ -35,7 +35,7 @@ relnotes () {
 
 tag () {
     msgfile=`mktemp --tmpdir release.$project.XXXXXX` || die "Unable to create msgfile"
-    git rev-list $tagprefix$version.. $paths | \
+    git rev-list $tagprefix$version.. | \
         git diff-tree --pretty='format:%s%n' --stdin -s | grep -iv "Update relnotes" | \
             grep -iv "update release notes" >$msgfile
     if [ $? -ne 0 ]; then
@@ -60,14 +60,13 @@ if [ -n "`git status --porcelain|cut -d" " -f1|grep -v '?'`" ]; then
     die "Unable to release: you have uncommitted changes"
 fi
 
-paths="`git ls-files | grep -Ev '(.git*|.*\.sh)'`"
 project=`basename "$PWD"`
 tagprefix=release/
 version=`git for-each-ref --sort=-taggerdate --count=1 --format='%(refname)' refs/tags/$tagprefix | sed -e "s,^refs/tags/$tagprefix,,"`
 baseversion=`echo $version | sed -e "s,^\(.*\)\..*$,\1,"`
 newversion=`expr $baseversion + 1`
 
-if [ -z "`git rev-list $tagprefix$version.. $paths`" ]; then
+if [ -z "`git rev-list $tagprefix$version..`" ]; then
     echo "No changes to include in the release"
     exit 3
 fi
