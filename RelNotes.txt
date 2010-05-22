@@ -1,5 +1,7 @@
 LootAlert Release Notes
 
+21.1:
+    - Fix Interface version
 21:
     - Add release notes for version 21
     - Add support for the HideLooted addon's filtering
