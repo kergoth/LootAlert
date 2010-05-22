@@ -12,12 +12,11 @@ if [ "$type" = "tag" ]; then
     body=%(body)
     body="$(echo "$body" | sed -e "$stripsig")"
     echo "$tag:"
-    if [ -z "$body" ]; then
-        subject=%(subject)
-        if [ -n "$subject" ]; then
-            echo "    - $subject"
-        fi
-    else
+    subject=%(subject)
+    if [ -n "$subject" ]; then
+        echo "    - $subject"
+    fi
+    if [ -n "$body" ]; then
         git for-each-ref --format="%%(body)" $ref | sed -e "$stripsig; /^ *$/d; s/^  */      /; s/^\([^ ]\)/    - \1/;"
     fi
 fi

@@ -1,6 +1,8 @@
 LootAlert Release Notes
 
 21:
+    - Add release notes for version 21
+    - Add support for the HideLooted addon's filtering
     - Default to LibSink's prioritized default sink, rather than UIErrorsFrame
     - Fix for changes in recent versions of WoW
     - Update to the latest versions of the embedded libraries
@@ -12,17 +14,21 @@ LootAlert Release Notes
 19:
     - Fix the options.lua error.
 18:
+    - Kill AceDBOptions lib, since I'm not using it.
     - Kill some debug code, since I'll be handling that elsewhere.
     - Code reorganization.
     - Fix bug reported by mindleglalaxy.. I wasn't handling the itemlink/itemstring properly.  Fixed by ensuring we always grab the suffixid, and only grab the uniqueid if it contains the bits for scaled random suffixes.
 17:
+    - Only send chat messages to the chat frames if db.chat is disabled.
     - Don't filter out all chat loot messages, only those we'll be handling (we don't want to hide other people looting stuff..).
 16:
     - Fix the chat message stuff to only output to frames that have item loot enabled.
 15:
+    - Apply the quality threshold to the examples again.
     - Rework the way I'm handling the chat message modification.  This should fix the last of the total count problems people have been running into with the new method enabled.
     - Make newmethod default again, since it should be stable now.
 14:
+    - Don't pause while trading or at a merchant, as they generate loot events.
     - Make the total count in loot messages pretend that no items have hit the bags yet as of the loot message.
       Example: If you were to loot 600 ammo all at once, depending on lag, it
       could have shown: +200 (600), +200 (600), +200 (600) for the 3 messages,
@@ -30,9 +36,11 @@ LootAlert Release Notes
       messages.  While accurate, this is confusing to users.  With this change,
       it would show: +200, +200 (400), +200 (600).
 13:
+    - Add option to enable/disable the new method of keeping track of total item counts, disabled by default.
     - Fix the chatthres option (was acting like it was always on).
     - Kill the Chat option from the LibSink output options, as it's pointless.
 12:
+    - Fix self is nil error in chat processItems function.
     - Reset lootprocessed to 0 when lootchatcount changes, to try to fix this odd count problem people are seeing.
     - Change default output to UIErrorsFrame, as the libsink-2.0 fallback is chatframe1, which is silly.
     - Add option to apply the item quality threshold to chat loot messages.
@@ -44,26 +52,33 @@ LootAlert Release Notes
 9:
     - Don't strip off the suffixes/enchants/etc of items that have them.
 8:
+    - Add option to modify the loot chat messages to also have LootAlert's formatting.
     - Add tek's "about" panel to the config.
     - Set default profile to Default, as I highly doubt anyone would need to change this per character.
     - Don't create our options tables until we need them.
 7:
+    - Add LibSink-2.0 to OptDeps.
     - Hardcode some info for the examples, so they don't need to be in the item cache to work.
 6:
+    - Add "Example Messages" to options.
     - Add ability to override / disable the "Loot: " prefix.
     - Reorganize the options, moving Output to its own subcategory in the interface options and grouping the formatting options together.
     - Fix the behavior of the Text Color option.
 5:
+    - Change Item Quality Threshold into a dropdown instead of a slider.
     - Change the layout of the output settings so they aren't cut off in Interface Options.
     - Update LibSink-2.0 to fix the bug with AceConfig-3.0 scrollAreas config.
 4:
+    - Added Item Quality Threshold option, so you can hide greys if you want to.
     - Add in game configuration in the Interface Options and via /la or /lootalert.
     - Use an embedded texture for the item icon for MSBT instead of using its skill icon stuff.
     - Add the missing embedded libraries.
     - Update to use LibSink-2.0 for output.
 3:
+    - Prep for in game config.
     - Fixups, cleanups, and add support for 2.4 texture links.
 2:
+    - Fix sct display.
     - Kill a bit of unnecessary string mt usage, color the item loot string such that only the item name itself is colored by rarity, and color the money loot string.. and clean up a little.
     - Fix a couple little bugs and change the format for a loot when you're looting 1 item, but have >0 in the inventory already.
     - Add spaces between gold & silver and silver & copper, and add support for icon in sct & msbt.
