@@ -1,6 +1,7 @@
 local mod = LibStub("AceAddon-3.0"):GetAddon("LootAlert")
 local inventoryitems, initialized, diff = {}, {}, {}
 local match = string.match
+local itempat = "(item:%d+:%d+:%d+:%d+:%d+:%d+:[-]?%d+)"
 
 local slots = {
     HeadSlot = true,
@@ -35,14 +36,14 @@ function mod:ScanInventory()
         local olditemstr = inventoryitems[slotid]
         local link = GetInventoryItemLink("player", slotid)
         if link then
-            local itemstr = self:GetItemStr(link)
-            self.itemcounts[itemstr] = (self.itemcounts[itemstr] or 0) + 1
+            local itemstr = match(link, itempat)
+            self.itemcounts[itemstr] = self.itemcounts[itemstr] + 1
             inventoryitems[slotid] = itemstr
         else
             inventoryitems[slotid] = nil
         end
         if olditemstr then
-            self.itemcounts[olditemstr] = (self.itemcounts[olditemstr] or 0) - 1
+            self.itemcounts[olditemstr] = self.itemcounts[olditemstr] - 1
         end
     end
 end
@@ -71,7 +72,7 @@ function mod:ScanBags(bagnum, fresh)
         for slot = 1, GetContainerNumSlots(bag), 1 do
             local link = GetContainerItemLink(bag, slot)
             if link then
-                local itemstr = self:GetItemStr(link)
+                local itemstr = match(link, itempat)
                 local _, count = GetContainerItemInfo(bag, slot)
                 local current = diff[itemstr] or 0
                 diff[itemstr] = current + count
@@ -90,11 +91,11 @@ function mod:ScanBags(bagnum, fresh)
 
     for item, count in pairs(diff) do
         if count > 0 and not fresh and initialized[bagnum] then
-            local pendingcount = (self.pending[item] or 0) - count
+            local pendingcount = self.pending[item] - count
             self.pending[item] = pendingcount
         end
 
-        self.itemcounts[item] = (self.itemcounts[item] or 0) + count
+        self.itemcounts[item] = self.itemcounts[item] + count
         diff[item] = nil
     end
     initialized[bagnum] = true

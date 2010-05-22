@@ -1,6 +1,7 @@
 local iconpath = "Interface\\AddOns\\LootAlert\\Icons"
 local match, format, gsub, sub = string.match, string.format, string.gsub, string.sub
 local db
+local HideLooted
 
 -- Addon Object
 local mod = LibStub("AceAddon-3.0"):NewAddon("LootAlert", "AceEvent-3.0", "AceConsole-3.0", "AceHook-3.0", "LibSink-2.0")
@@ -10,10 +11,11 @@ local reg = LibStub("AceConfigRegistry-3.0")
 local dialog = LibStub("AceConfigDialog-3.0")
 
 -- State
-local lootframes = {}
+local chatframes = {}
 local goldpat, silverpat, copperpat, moneysep
-mod.itemcounts = {}
-mod.pending = {}
+local zeromt = {__index = function() return 0 end}
+mod.itemcounts = setmetatable({}, zeromt)
+mod.pending = setmetatable({}, zeromt)
 
 local defaults = {
     profile = {
@@ -102,7 +104,7 @@ function mod:EnableNewMethod(state, first)
                     found = true
                 end
             end
-            lootframes[f] = found
+            chatframes[f] = found
         end
     elseif not first then
         self:UnregisterEvent("BANKFRAME_SHOW")
@@ -150,6 +152,7 @@ function mod:OnEnable()
     self:RegisterEvent("CHAT_MSG_MONEY", "Money")
 
     self:EnableNewMethod(db.newmethod, true)
+    HideLooted = LibStub("AceAddon-3.0"):GetAddon("HideLooted")
 end
 
 
@@ -174,14 +177,14 @@ end
 
 function mod:ChatFrame_AddMessageGroup(frame, group)
     if group == "LOOT" then
-        lootframes[frame] = true
+        chatframes[frame] = true
     end
     return self.hooks.ChatFrame_AddMessageGroup(frame, group)
 end
 
 function mod:ChatFrame_RemoveMessageGroup(frame, group)
     if group == "LOOT" then
-        lootframes[frame] = nil
+        chatframes[frame] = nil
     end
     return self.hooks.ChatFrame_RemoveMessageGroup(frame, group)
 end
@@ -211,37 +214,28 @@ function mod:ProcessMoneyEvent(message)
     return self:GetMoneyMessage(gold, silver, copper)
 end
 
-local band = bit.band
-function mod:GetItemStr(itemlink)
-    local itempat = "(item:%d+:%d+:%d+:%d+:%d+:%d+:([-]?%d+)):([-]?%d+)"
-    local itemstr, suffixid, uniqueid = match(itemlink, itempat)
-    if (tonumber(suffixid) or 0) < 0 then
-        -- scaled random suffixes, see http://www.wowwiki.com/ItemString
-        uniqueid = band(tonumber(uniqueid) or 0, 65535)
-    else
-        uniqueid = 0
-    end
-    return itemstr..":"..uniqueid
-end
-
 local ITEM_QUALITY_COLORPATS = {}
 for k, v in pairs(ITEM_QUALITY_COLORS) do
     ITEM_QUALITY_COLORPATS[k] = format("|cff%02x%02x%02x", 255 * v.r, 255 * v.g, 255 * v.b)
 end
+local itempat = "(item:(%d+):%d+:%d+:%d+:%d+:%d+:[-]?%d+)"
 function mod:GetItemMessage(itemlink, count, name, totalcount, quality, tex)
-    local itemstr = self:GetItemStr(itemlink)
+    local itemstr, itemid = match(itemlink, itempat)
     if itemstr then
+        if HideLooted and HideLooted.db.profile.items[itemid] then
+            return
+        end
         if not name then
             local _
             name, _, quality, _, _, _, _, _, _, tex = GetItemInfo(itemlink)
 
             if db.newmethod then
-                local pendingcount = self.pending[itemstr] or 0
+                local pendingcount = self.pending[itemstr]
                 pendingcount = pendingcount + count
                 self.pending[itemstr] = pendingcount
-                totalcount = (self.itemcounts[itemstr] or 0) + pendingcount
+                totalcount = self.itemcounts[itemstr] + pendingcount
             else
-                totalcount = GetItemCount(itemstr) + count
+                totalcount = GetItemCount(itemstr)
             end
         end
 
@@ -307,7 +301,7 @@ function mod:Loot(event, message)
         if db.chat then
             local qualitythres = not db.chatthres or quality >= db.itemqualitythres
             if qualitythres then
-                for frame in pairs(lootframes) do
+                for frame in pairs(chatframes) do
                     frame:AddMessage(out)
                 end
             end
