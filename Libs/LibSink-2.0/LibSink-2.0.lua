@@ -1,6 +1,6 @@
 ﻿--[[
 Name: Sink-2.0
-Revision: $Rev: 73848 $
+Revision: $Rev: 67 $
 Author(s): Rabbit (rabbit.magtheridon@gmail.com), Antiarc (cheal@gmail.com)
 Website: http://rabbit.nihilum.eu
 Documentation: http://wiki.wowace.com/index.php/Sink-2.0
@@ -32,7 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 -- Sink-2.0
 
 local SINK20 = "LibSink-2.0"
-local SINK20_MINOR = string.match("$Revision: 73848 $", "[0-9]+")
+local SINK20_MINOR = 90000 + tonumber(("$Revision: 67 $"):match("(%d+)"))
 
 local sink = LibStub:NewLibrary(SINK20, SINK20_MINOR)
 if not sink then return end
@@ -184,19 +184,33 @@ elseif l == "zhTW" then
 	L_STICKY_DESC = "設定使用固定訊息。\n\n只有 Blizzard 浮動戰鬥文字，Parrot，SCT 及 MikSBT 有支援。"
 	L_NONE = "隱藏"
 	L_NONE_DESC = "隱藏所有插件輸出。"
+elseif l == "ruRU" then
+	L_DEFAULT = "По умолчанию"
+	L_DEFAULT_DESC = "Маршрут вывода сообщений данного аддона через первое доступное устройство, предпочитая доступные аддоны прокрутки текста боя."
+	L_ROUTE = "Маршрут вывода сообщений данного аддона через %s."
+	L_SCT = "SCT"
+	L_MSBT = "MikSBT"
+	L_BIGWIGS = "BigWigs"
+	L_BCF = "BlinkCombatFeedback"
+	L_UIERROR = "Фрейм ошибок Blizzard"
+	L_CHAT = "Чат"
+	L_BLIZZARD = "Blizzard FCT"
+	L_RW = "Объявление рейду"
+	L_PARROT = "Parrot"
+	L_CHANNEL = "Канал"
+	L_OUTPUT = "Вывод"
+	L_OUTPUT_DESC = "Куда выводить сообщения данного аддона."
+	L_SCROLL = "Область прокрутки"
+	L_SCROLL_DESC = "Назначить область прокрутки куда должны выводиться сообщения.\n\nДоступно только для Parrotа, SCT или MikSBT."
+	L_STICKY = "Клейкий"
+	L_STICKY_DESC = "Сделать сообщения данного аддона клейкими.\n\nДоступно только для Blizzard FCT, Parrot, SCT или MikSBT."
+	L_NONE = "Нету"
+	L_NONE_DESC = "Скрыть все сообщения данного аддона."
 end
 
 local SML = LibStub("LibSharedMedia-3.0", true)
 
 local _G = getfenv(0)
-
-function sink:Embed(addon)
-	addon.Pour = self.Pour
-	addon.RegisterSink = self.RegisterSink
-	addon.SetSinkStorage = self.SetSinkStorage
-	addon.GetSinkAce2OptionsDataTable = self.GetSinkAce2OptionsDataTable
-	addon.GetSinkAce3OptionsDataTable = self.GetSinkAce3OptionsDataTable
-end
 
 local function getSticky(addon)
 	return sink.storageForAddon[addon] and sink.storageForAddon[addon].sink20Sticky or nil
@@ -212,12 +226,12 @@ local function parrot(addon, text, r, g, b, font, size, outline, sticky, loc, ic
 end
 
 local sct_color = {}
-local function sct(addon, text, r, g, b, font, size, outline, sticky)
+local function sct(addon, text, r, g, b, font, size, outline, sticky, _, icon)
 	sct_color.r, sct_color.g, sct_color.b = r, g, b
 	local loc = sink.storageForAddon[addon] and sink.storageForAddon[addon].sink20ScrollArea or "Messages"
 	local location = (loc == "Outgoing" and SCT.FRAME1) or (loc == "Incoming" and SCT.FRAME2) or SCT.MSG
 	local s = getSticky(addon) or sticky
-	SCT:DisplayCustomEvent(text, sct_color, s, location)
+	SCT:DisplayCustomEvent(text, sct_color, s, location, nil, icon)
 end
 
 local msbt_outlines = {["NORMAL"] = 1, ["OUTLINE"] = 2, ["THICKOUTLINE"] = 3}
@@ -245,7 +259,7 @@ local function blizzard(addon, text, r, g, b, font, size, outline, sticky, _, ic
 		local s = getSticky(addon) or sticky
 		CombatText_AddMessage(text, CombatText_StandardScroll, r, g, b, s and "crit" or nil, false)
 	else
-		UIErrorsFrame:AddMessage(text, r, g, b, 1, UIERRORS_HOLD_TIME)
+		UIErrorsFrame:AddMessage(text, r, g, b, 1.0)
 	end
 end
 
@@ -274,18 +288,19 @@ end
 
 local function uierror(addon, text, r, g, b, _, _, _, _, _, icon)
 	if icon then text = "|T"..icon..":20:20:-5|t"..text end
-	UIErrorsFrame:AddMessage(text, r, g, b, 1, UIERRORS_HOLD_TIME)
+	UIErrorsFrame:AddMessage(text, r, g, b, 1.0)
 end
 
 local rw
 do
-	local c = {}
+	local white = {r = 1, g = 1, b = 1}
 	function rw(addon, text, r, g, b, _, _, _, _, _, icon)
-		if not c[r] then c[r] = {} end
-		if not c[r][g] then c[r][g] = {} end
-		if not c[r][g][b] then c[r][g][b] = {r = r, g = g, b = b} end
+		if r or g or b then
+			local c = "|cff" .. string.format("%02x%02x%02x", (r or 0) * 255, (g or 0) * 255, (b or 0) * 255)
+			text = c .. text .. "|r"
+		end
 		if icon then text = "|T"..icon..":20:20:-5|t"..text end
-		RaidNotice_AddMessage(RaidWarningFrame, text, c[r][g][b])
+		RaidNotice_AddMessage(RaidWarningFrame, text, white)
 	end
 end
 
@@ -295,7 +310,8 @@ local handlerPriority = { "Parrot", "SCT", "MikSBT", "BCF" }
 -- Thanks to ckk for these
 local customHandlersEnabled = {
 	Parrot = function()
-		return _G.Parrot and _G.Parrot:IsActive()
+		if not _G.Parrot then return end
+		return _G.Parrot.IsEnabled and _G.Parrot:IsEnabled() or _G.Parrot:IsActive()
 	end,
 	SCT = function()
 		return _G.SCT and _G.SCT:IsEnabled()
@@ -306,7 +322,7 @@ local customHandlersEnabled = {
 }
 
 -- Default to version 5 or higher now
-local msbtVersion = tonumber(GetAddOnMetadata("MikScrollingBattleText", "Version")) or 5
+local msbtVersion = tonumber(string.match(GetAddOnMetadata("MikScrollingBattleText", "Version") or "","^%d+\.%d+")) or 5
 local isMSBTFive = math.floor(msbtVersion) > 4 and true or nil
 if isMSBTFive then
 	customHandlersEnabled.MikSBT = function()
@@ -363,7 +379,7 @@ function sink:Pour(textOrAddon, ...)
 	elseif t == "table" then
 		pour(textOrAddon, ...)
 	else
-		sink:error("Invalid argument 2 to :Pour, must be either a string or a table.")
+		error("Invalid argument 2 to :Pour, must be either a string or a table.")
 	end
 end
 
@@ -441,7 +457,7 @@ do
 		UIErrorsFrame = {L_UIERROR},
 		None = {L_NONE, L_NONE_DESC}
 	}
-	
+
 	local function getAce2SinkOptions(key, opts)
 		local name, desc, hidden = unpack(opts)
 		args["Ace2"][key] = {
@@ -452,7 +468,7 @@ do
 			hidden = hidden
 		}
 	end
-	
+
 	function sink.GetSinkAce2OptionsDataTable(addon)
 		options["Ace2"][addon] = options["Ace2"][addon] or {
 			output = {
@@ -505,7 +521,7 @@ do
 		}
 		return options["Ace2"][addon]
 	end
-	
+
 	-- Ace3 options data table format
 	local function getAce3SinkOptions(key, opts)
 		local name, desc, hidden = unpack(opts)
@@ -573,7 +589,7 @@ do
 						options["Ace3"][addon].args.ScrollArea.disabled = not sa
 						options["Ace3"][addon].args.Sticky.disabled = not sink.stickyAddons[key]
 						sink.storageForAddon[addon].sink20OutputSink = key
-					end				
+					end
 				end,
 				disabled = function()
 					return (type(addon.IsEnabled) == "function" and not addon:IsEnabled()) or nil
@@ -582,7 +598,7 @@ do
 		end
 		return options["Ace3"][addon]
 	end
-	
+
 	local sinkOptionGenerators = {
 		["Ace2"] = getAce2SinkOptions,
 		["Ace3"] = getAce3SinkOptions
@@ -594,7 +610,7 @@ do
 			generator(name, opts)
 		end
 	end
-	
+
 	args["Ace2"].ScrollArea = {
 		type = "text",
 		name = L_SCROLL,
@@ -611,7 +627,7 @@ do
 		order = -2,
 		disabled = true
 	}
-	
+
 	args["Ace3"].ScrollArea = {
 		type = "select",
 		name = L_SCROLL,
@@ -627,7 +643,7 @@ do
 		order = -2,
 		disabled = true
 	}
-	
+
 	function sink:RegisterSink(shortName, name, desc, func, scrollAreaFunc, hasSticky)
 		assert(type(shortName) == "string")
 		assert(type(name) == "string")
@@ -635,9 +651,9 @@ do
 		assert(type(func) == "function" or type(func) == "string")
 		assert(type(scrollAreas) == "function" or scrollAreas == nil)
 		assert(type(hasSticky) == "boolean" or hasSticky == nil)
-		
+
 		if sinks[shortName] or sink.handlers[shortName] then
-			sink:error("There's already a sink by the short name %q.", shortName)
+			error("There's already a sink by the short name %q.", shortName)
 		end
 		sinks[shortName] = {name, desc}
 		-- Save it for library upgrades.
@@ -659,11 +675,11 @@ do
 			end
 		end
 		sink.stickyAddons[shortName] = hasSticky and true or nil
-		
+
 		for k, v in pairs(sinkOptionGenerators) do
 			v(shortName, sinks[shortName])
 		end
-	end		
+	end
 end
 
 function sink.SetSinkStorage(addon, storage)
@@ -676,7 +692,7 @@ end
 function sink:SetSinkOverride(override)
 	assert(type(override) == "string" or override == nil)
 	if override and not sink.handlers[override] then
-		sink:error("There's no %q sink.", override)
+		error("There's no %q sink.", override)
 	end
 	sink.override = override
 end
@@ -699,3 +715,24 @@ for k, v in pairs(handlers) do
 	sink.handlers[k] = v
 end
 
+-----------------------------------------------------------------------
+-- Embed handling
+
+sink.embeds = sink.embeds or {}
+
+local mixins = {
+	"Pour", "RegisterSink", "SetSinkStorage",
+	"GetSinkAce2OptionsDataTable", "GetSinkAce3OptionsDataTable"
+}
+
+function sink:Embed(target)
+	sink.embeds[target] = true
+	for _,v in pairs(mixins) do
+		target[v] = sink[v]
+	end
+	return target
+end
+
+for addon in pairs(sink.embeds) do
+	sink:Embed(addon)
+end
