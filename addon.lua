@@ -35,7 +35,7 @@ local defaults = {
         prefix = L["Loot: "],
 
         output = {
-            sink20OutputSink = "UIErrorsFrame",
+            sink20OutputSink = "Default",
         },
     },
 }
