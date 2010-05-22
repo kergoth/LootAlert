@@ -139,8 +139,8 @@ function mod:OnInitialize()
     dialog:AddToBlizOptions("LootAlert Output", L["Output"], "LootAlert")
     LibStub("tekKonfig-AboutPanel").new("LootAlert", "LootAlert")
 
-    self:RegisterChatCommand("lootalert", function() InterfaceOptionsFrame_OpenToFrame(dialog.BlizOptions["LootAlert"].frame) end)
-    self:RegisterChatCommand("la", function() InterfaceOptionsFrame_OpenToFrame(dialog.BlizOptions["LootAlert"].frame) end)
+    self:RegisterChatCommand("lootalert", function() InterfaceOptionsFrame_OpenToCategory("LootAlert") end)
+    self:RegisterChatCommand("la", function() InterfaceOptionsFrame_OpenToCategory("LootAlert") end)
 
     mod.getOptions = nil
 end
@@ -154,17 +154,17 @@ end
 
 
 -- Chat
-local function processMoney(s)
-    return false, mod:ProcessMoneyEvent(s)
+local function processMoney(frame, event, message, ...)
+    return false, mod:ProcessMoneyEvent(message), ...
 end
-local function processItems(s)
+local function processItems(frame, event, message, ...)
     -- Filter out chat loot messages that we'll be handling ourselves
-    local item, count = mod:ParseChatMessage(s)
+    local item, count = mod:ParseChatMessage(message)
 
     if item then
         return true
     end
-    return false, s
+    return false, message, ...
 end
 function mod:EnableChatFilter(val)
     local func = val and ChatFrame_AddMessageEventFilter or ChatFrame_RemoveMessageEventFilter
