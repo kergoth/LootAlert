@@ -152,7 +152,7 @@ function mod:OnEnable()
     self:RegisterEvent("CHAT_MSG_MONEY", "Money")
 
     self:EnableNewMethod(db.newmethod, true)
-    HideLooted = LibStub("AceAddon-3.0"):GetAddon("HideLooted")
+    HideLooted = LibStub("AceAddon-3.0"):GetAddon("HideLooted", true)
 end
 
 
