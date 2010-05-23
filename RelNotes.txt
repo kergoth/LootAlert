@@ -1,5 +1,7 @@
 LootAlert Release Notes
 
+22:
+    - Fix error at login seen when HideLooted is not installed
 21.1:
     - Fix Interface version
 21:
