@@ -64,7 +64,10 @@ project=`basename "$PWD"`
 tagprefix=release/
 version=`git for-each-ref --sort=-taggerdate --count=1 --format='%(refname)' refs/tags/$tagprefix | sed -e "s,^refs/tags/$tagprefix,,"`
 baseversion=`echo $version | sed -e "s,^\(.*\)\..*$,\1,"`
-newversion=`expr $baseversion + 1`
+newversion="$1"
+if [ -z "$newversion" ]; then
+    newversion=`expr $baseversion + 1`
+fi
 origref="`git rev-parse HEAD`"
 
 if [ -z "`git rev-list $tagprefix$version..`" ]; then
