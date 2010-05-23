@@ -73,7 +73,7 @@ if [ -z "`git rev-list $tagprefix$version..`" ]; then
 fi
 
 if [ -e "$project.toc" ]; then
-    sed -i -e "s,^## Version:.*,## Version: $newversion" "$project.toc"
+    sed -i -e "s,^## Version:.*,## Version: $newversion," "$project.toc"
     git add $project.toc
     git ci -s -m"Update .toc Version to $newversion"
 fi
@@ -84,5 +84,3 @@ git add RelNotes.txt
 git ci -s -m"Update Release Notes for version $newversion"
 tag
 git archive --format=zip --prefix $project/ -o $project-$newversion.zip $tagprefix$newversion
-git tag -d $tagprefix$newversion
-git reset --hard $origref
