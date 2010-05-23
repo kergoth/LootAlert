@@ -1,7 +1,7 @@
 ## Interface: 30300
 ## Title: Loot Alert
 ## Notes: Loot display in scrolling combat text addons
-## Version: 21.1
+## Version: 22
 ## Author: Kergoth
 ## DefaultState: Enabled
 ## LoadOnDemand: 0
